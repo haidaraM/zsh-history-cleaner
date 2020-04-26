@@ -1,7 +1,33 @@
 import argparse
+import sys
+
+from zshhistorycleaner import __version__, __prog__
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="")
+    main_parser = argparse.ArgumentParser(description="Clean your Zsh history", prog=__prog__)
 
-    return parser
+    main_parser.add_argument("--no-backup", action="store_false",
+                             help="Disable history file backup. A backup is written to {history-file-path}.{timestamp}")
+
+    main_parser.add_argument("-H", "--history-file-path", help="History file path. Default to ~/.zsh_history",
+                             default="~/.zsh_history")
+
+    main_parser.add_argument("-V", "--version", dest="version", action="version", version='%(prog)s ' + __version__,
+                             help="Print version and exits")
+
+    return main_parser
+
+
+def main(args=None):
+    """
+    CLI entry point
+    :return:
+    """
+    args = args or sys.argv
+    parser = get_parser()
+    parsed_args = parser.parse_args(args[1:])
+
+
+if __name__ == '__main__':
+    main(sys.argv)

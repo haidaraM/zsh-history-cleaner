@@ -1,4 +1,4 @@
-from zshhistorycleaner.main import parse_history_entry
+from zshhistorycleaner.cleaner import parse_history_entry
 
 
 def test_empty_command():

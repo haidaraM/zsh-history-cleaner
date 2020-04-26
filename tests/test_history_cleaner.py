@@ -1,4 +1,4 @@
-from zshhistorycleaner.main import ZshHistoryCleaner
+from zshhistorycleaner.cleaner import ZshHistoryCleaner
 
 
 def test_empty_entries(tmpdir):

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fbdde6419b82c9056a54150c29f162944eee1de08517d25a571cda014878a452"
+            "sha256": "f09e32ba687b971331665ed1849d7d653c14d75e9d3fc5fba3d49574a09d310a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -15,7 +15,12 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "zsh-history-cleaner": {
+            "editable": true,
+            "path": "."
+        }
+    },
     "develop": {
         "attrs": {
             "hashes": [

@@ -9,6 +9,7 @@ pytest-cov = "*"
 flake8 = "*"
 
 [packages]
+zsh-history-cleaner = {editable = true, path = "."}
 
 [requires]
 python_version = "3.7"
