@@ -1,4 +1,4 @@
-import os
+import logging
 import re
 import time
 from shutil import copy2
@@ -7,6 +7,10 @@ from typing import Optional, Match, List
 # Regex to parse an entry in the history file
 ZSH_HISTORY_ENTRY_REGEX = r": (?P<beginning_time>\d{10}):(?P<elapsed_seconds>\d);(?P<command>.*)"
 ZSH_COMPILED_REGEX = re.compile(ZSH_HISTORY_ENTRY_REGEX)
+
+logging.basicConfig(format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class ZshHistoryEntry:
@@ -50,19 +54,24 @@ class ZshHistoryEntry:
         return isinstance(other, self.__class__) and self.command == other.command
 
 
-class ZshHistoryCleaner:
+class ZshHistory:
     """
-    Clean history file
+    A history file
     """
 
     def __init__(self, history_file_path):
+        """
+
+        :param history_file_path:
+        """
         self.history_file_path = history_file_path
         self.history_entries = self._get_entries()
+        logger.info(f"{len(self.history_entries)} history entries read from {self.history_file_path}")
 
-    def remove_duplicates(self) -> List[ZshHistoryEntry]:
+    def remove_duplicates(self):
         """
         Remove duplicate commands.
-        :return: A list containg the entries whith duplicates
+        :return:
         """
         return sorted(list(set(self.history_entries)), key=lambda ent: ent.beginning_time)
 
@@ -74,15 +83,17 @@ class ZshHistoryCleaner:
         lines = self._read_history_file()
         entries = []
         for current_line in lines:
-            match_object = parse_history_entry(current_line)
-            if match_object:
-                entry = ZshHistoryEntry(raw_line=current_line, beginning_time=int(match_object.group("beginning_time")),
-                                        elapsed_seconds=int(match_object.group("elapsed_seconds")),
-                                        command=match_object.group("command").strip())
-                entries.append(entry)
-            else:
-                # TODO: warning message
-                pass
+            current_line = current_line.strip()
+            if len(current_line) > 0:
+                match_object = parse_history_entry(current_line)
+                if match_object:
+                    entry = ZshHistoryEntry(raw_line=current_line,
+                                            beginning_time=int(match_object.group("beginning_time")),
+                                            elapsed_seconds=int(match_object.group("elapsed_seconds")),
+                                            command=match_object.group("command").strip())
+                    entries.append(entry)
+                else:
+                    logger.warning(f"Impossible to parse the line '{current_line}'")
 
         return entries
 
@@ -117,23 +128,13 @@ def write_history(history_file_path, entries: List[ZshHistoryEntry], backup: boo
     """
     if backup:
         backup_file_path = f"{history_file_path}.{int(time.time())}"
-        print(f"Backing up '{history_file_path}' to '{backup_file_path}'")
+        logger.info(f"Backing up '{history_file_path}' to '{backup_file_path}'")
         copy2(history_file_path, backup_file_path)
 
-    print("Writing history...")
     # sort the entries based on the timestamp
-    sorted_entries = sorted(entries, key=lambda ent: ent.beginning_time)
-    with open(history_file, "w") as f:
-        for e in sorted_entries:
+    with open(history_file_path, "w") as f:
+        for e in entries:
             f.write(e.raw_line)
+            f.write("\n")
 
-
-if __name__ == '__main__':
-    history_file = os.path.expanduser("~/.zsh_history")
-    cleaner = ZshHistoryCleaner(history_file)
-    no_dups = cleaner.remove_duplicates()
-
-    print(f"{len(cleaner.history_entries)} command(s) parsed successfully from the history file")
-    print("Checking duplicate commands...")
-    print(f"{len(cleaner.history_entries) - len(no_dups)} command(s) will be removed from the history")
-    write_history(history_file, no_dups)
+    logger.info("History successfully written")

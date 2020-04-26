@@ -1,4 +1,4 @@
-from zshhistorycleaner.cleaner import ZshHistoryCleaner
+from zshhistorycleaner.cleaner import ZshHistory
 
 
 def test_empty_entries(tmpdir):
@@ -8,7 +8,7 @@ def test_empty_entries(tmpdir):
     """
     hist_file = tmpdir.join("empty.history")
     hist_file.write("")
-    cleaner = ZshHistoryCleaner(hist_file.strpath)
+    cleaner = ZshHistory(hist_file.strpath)
     assert len(cleaner.history_entries) == 0
     assert len(cleaner.remove_duplicates()) == 0
 
@@ -26,7 +26,7 @@ def test_only_duplicate_commands(tmpdir):
     {entry2}
     """)
 
-    cleaner = ZshHistoryCleaner(hist_file.strpath)
+    cleaner = ZshHistory(hist_file.strpath)
     assert len(cleaner.history_entries) == 2
     no_dups = cleaner.remove_duplicates()
     assert len(no_dups) == 1
@@ -45,7 +45,7 @@ def test_without_duplicate_commands(tmpdir):
     : 1583848896:0;ls
     """)
 
-    cleaner = ZshHistoryCleaner(hist_file.strpath)
+    cleaner = ZshHistory(hist_file.strpath)
     assert len(cleaner.history_entries) == 2
     no_dups = cleaner.remove_duplicates()
     assert len(no_dups) == 2
