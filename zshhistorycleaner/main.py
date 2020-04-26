@@ -5,8 +5,8 @@ from shutil import copy2
 from typing import Optional, Match, List
 
 # Regex to parse an entry in the history file
-COMMAND_REGEX = r": (?P<beginning_time>\d{10}):(?P<elapsed_seconds>\d);(?P<command>.*)"
-compiled_regex = re.compile(COMMAND_REGEX)
+ZSH_HISTORY_ENTRY_REGEX = r": (?P<beginning_time>\d{10}):(?P<elapsed_seconds>\d);(?P<command>.*)"
+ZSH_COMPILED_REGEX = re.compile(ZSH_HISTORY_ENTRY_REGEX)
 
 
 class ZshHistoryEntry:
@@ -104,7 +104,7 @@ def parse_history_entry(line: str) -> Optional[Match]:
     :return: a matched object
     """
 
-    return compiled_regex.search(line)
+    return ZSH_COMPILED_REGEX.search(line)
 
 
 def write_history(history_file_path, entries: List[ZshHistoryEntry], backup: bool = True):
