@@ -22,12 +22,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip pipenv
           pipenv install --dev
-          pipenv shell
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --max-line-length=120
+          pipenv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --max-line-length=120
       - name: Test with pytest
         run: |
           cd tests
-          pytest
+          pipenv run pytest
