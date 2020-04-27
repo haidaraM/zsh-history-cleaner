@@ -3,7 +3,7 @@ import os
 import sys
 
 from zshhistorycleaner import __version__, __prog__
-from zshhistorycleaner.cleaner import ZshHistory, write_history
+from zshhistorycleaner.cleaner import ZshHistory
 from zshhistorycleaner.cleaner import logger
 
 
@@ -33,14 +33,16 @@ def main(args=None):
     parsed_args = parser.parse_args(args[1:])
     history_file_path = os.path.expanduser(parsed_args.history_file_path)
 
-    cleaner = ZshHistory(history_file_path)
-    logger.info("Checking duplicate commands...")
-    no_dups = cleaner.remove_duplicates()
+    history = ZshHistory(history_file_path)
+    entries_number = len(history.entries)
+    logger.info("Removing duplicate commands...")
+    history.remove_duplicates()
 
-    logger.info(f"{len(cleaner.history_entries) - len(no_dups)} command(s) will be removed from the history")
+    logger.info(f"{entries_number - len(history.entries)} command(s) will be removed from the history")
 
-    if len(cleaner.history_entries) != len(no_dups):
-        write_history(history_file_path, no_dups, parsed_args.no_backup)
+    if entries_number != len(history.entries):
+        logger.info("Saving")
+        history.save(backup=parsed_args.no_backup)
 
 
 if __name__ == '__main__':

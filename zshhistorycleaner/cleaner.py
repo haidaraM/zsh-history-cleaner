@@ -65,15 +65,33 @@ class ZshHistory:
         :param history_file_path:
         """
         self.history_file_path = history_file_path
-        self.history_entries = self._get_entries()
-        logger.info(f"{len(self.history_entries)} history entries read from {self.history_file_path}")
+        self.entries = self._get_entries()
+        logger.info(f"{len(self.entries)} history entries read from {self.history_file_path}")
+
+    def save(self, backup: bool = True, output_file_path=None):
+        """
+        Save the entries in
+        :param backup: if True, a backup will be created to {.history_file_path}.{timestamp}
+        :param output_file_path: the file in which save the history. Default to self.history_file_path
+        :return:
+        """
+        if backup:
+            backup_file_path = f"{self.history_file_path}.{int(time.time())}"
+            logger.info(f"Backing up '{self.history_file_path}' to '{backup_file_path}'")
+            copy2(self.history_file_path, backup_file_path)
+        output_file_path = output_file_path or self.history_file_path
+
+        with open(output_file_path, "w") as f:
+            for e in self.entries:
+                f.write(e.raw_line)
+                f.write("\n")
 
     def remove_duplicates(self):
         """
         Remove duplicate commands.
         :return:
         """
-        return sorted(list(set(self.history_entries)), key=lambda ent: ent.beginning_time)
+        self.entries = sorted(list(set(self.entries)), key=lambda ent: ent.beginning_time)
 
     def _get_entries(self) -> List[ZshHistoryEntry]:
         """
@@ -116,25 +134,3 @@ def parse_history_entry(line: str) -> Optional[Match]:
     """
 
     return ZSH_COMPILED_REGEX.search(line)
-
-
-def write_history(history_file_path, entries: List[ZshHistoryEntry], backup: bool = True):
-    """
-
-    :param history_file_path:
-    :param entries:
-    :param backup: is backup true, the history is backup with ${history_filename}.${timestamp}
-    :return:
-    """
-    if backup:
-        backup_file_path = f"{history_file_path}.{int(time.time())}"
-        logger.info(f"Backing up '{history_file_path}' to '{backup_file_path}'")
-        copy2(history_file_path, backup_file_path)
-
-    # sort the entries based on the timestamp
-    with open(history_file_path, "w") as f:
-        for e in entries:
-            f.write(e.raw_line)
-            f.write("\n")
-
-    logger.info("History successfully written")

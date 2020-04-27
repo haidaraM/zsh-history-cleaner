@@ -19,7 +19,7 @@ def test_no_timestamp():
 
 def test_simple_command():
     """
-
+    Test a simple command
     :return:
     """
     command = ": 1556053755:2;printenv"

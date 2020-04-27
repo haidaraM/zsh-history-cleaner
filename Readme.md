@@ -6,7 +6,8 @@ A command line tool to clean your .zsh history:
 
 
 ## Usage
-By default, the duplicates command are remove from the history file
+By default, the duplicates command are remove from the history file. **Note that multilines command with backslash are
+note supported.**
 ```shell script
 $ zhc --help
 Clean your Zsh history by removing duplicates command etc...

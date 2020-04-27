@@ -9,8 +9,9 @@ def test_empty_entries(tmpdir):
     hist_file = tmpdir.join("empty.history")
     hist_file.write("")
     cleaner = ZshHistory(hist_file.strpath)
-    assert len(cleaner.history_entries) == 0
-    assert len(cleaner.remove_duplicates()) == 0
+    assert len(cleaner.entries) == 0
+    cleaner.remove_duplicates()
+    assert len(cleaner.entries) == 0
 
 
 def test_only_duplicate_commands(tmpdir):
@@ -26,11 +27,11 @@ def test_only_duplicate_commands(tmpdir):
     {entry2}
     """)
 
-    cleaner = ZshHistory(hist_file.strpath)
-    assert len(cleaner.history_entries) == 2
-    no_dups = cleaner.remove_duplicates()
-    assert len(no_dups) == 1
-    assert no_dups[0].command == "rm CHANGELOG.md"
+    history = ZshHistory(hist_file.strpath)
+    assert len(history.entries) == 2
+    history.remove_duplicates()
+    assert len(history.entries) == 1
+    assert history.entries[0].command == "rm CHANGELOG.md"
 
 
 def test_without_duplicate_commands(tmpdir):
@@ -43,13 +44,15 @@ def test_without_duplicate_commands(tmpdir):
     hist_file.write(f"""
     : 1583848895:0;rm CHANGELOG.md
     : 1583848896:0;ls
+
+
     """)
 
-    cleaner = ZshHistory(hist_file.strpath)
-    assert len(cleaner.history_entries) == 2
-    no_dups = cleaner.remove_duplicates()
-    assert len(no_dups) == 2
+    history = ZshHistory(hist_file.strpath)
+    assert len(history.entries) == 2
+    history.remove_duplicates()
+    assert len(history.entries) == 2
 
     # remove_duplicates should not alter the order
-    assert no_dups[0].command == "rm CHANGELOG.md"
-    assert no_dups[1].command == "ls"
+    assert history.entries[0].command == "rm CHANGELOG.md"
+    assert history.entries[1].command == "ls"
