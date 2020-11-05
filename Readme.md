@@ -1,8 +1,11 @@
 # ZSH History Cleaner
+
+![Test and Lint](https://github.com/haidaraM/zsh-history-cleaner/workflows/Test%20and%20Lint/badge.svg)
+
 A command line tool to clean your .zsh history:
- - Remove duplicate commands: trailing space are removed when checking duplicates
- - Remove command matching some patterns (TODO)
- - Remove command from a specific time range (TODO)
+ - Remove duplicate commands
+ - Remove commands matching some patterns (TODO)
+ - Remove commands from a specific time range (TODO)
 
 
 ## Usage
