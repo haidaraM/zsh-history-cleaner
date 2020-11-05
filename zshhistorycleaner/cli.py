@@ -3,8 +3,8 @@ import os
 import sys
 
 from zshhistorycleaner import __version__, __prog__
-from zshhistorycleaner.cleaner import ZshHistory
-from zshhistorycleaner.cleaner import logger
+from zshhistorycleaner.history import ZshHistory
+from zshhistorycleaner.history import logger
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -16,7 +16,7 @@ def get_parser() -> argparse.ArgumentParser:
     main_parser.add_argument("--no-backup", action="store_false",
                              help="Disable history file backup. A backup is written to {history-file-path}.{timestamp}")
 
-    main_parser.add_argument("-H", "--history-file-path", help="History file path. Default to ~/.zsh_history",
+    main_parser.add_argument("-H", "--history-file", help="History file path. Default to ~/.zsh_history",
                              default="~/.zsh_history")
 
     main_parser.add_argument("-v", "--version", dest="version", action="version", version='%(prog)s ' + __version__,
@@ -34,9 +34,9 @@ def main(args=None):
     parser = get_parser()
     parsed_args = parser.parse_args(args[1:])
 
-    history_file_path = os.path.expanduser(parsed_args.history_file_path)
+    history_file = os.path.expanduser(parsed_args.history_file)
     dry_run = parsed_args.dry_run
-    history = ZshHistory(history_file_path)
+    history = ZshHistory(history_file)
     entries_number = len(history.entries)
 
     logger.info("Removing duplicate commands...")

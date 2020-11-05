@@ -1,10 +1,13 @@
 import logging
+import os
 import re
 import time
 from shutil import copy2
-from typing import Optional, Match, List
+from typing import List
 
 # Regex to parse an entry in the history file
+from zshhistorycleaner.exceptions import HistoryEntryParserError
+
 ZSH_HISTORY_ENTRY_REGEX = r": (?P<beginning_time>\d{10}):(?P<elapsed_seconds>\d);(?P<command>.*)"
 ZSH_COMPILED_REGEX = re.compile(ZSH_HISTORY_ENTRY_REGEX)
 
@@ -56,15 +59,15 @@ class ZshHistoryEntry:
 
 class ZshHistory:
     """
-    A history file
+    A ZSH history file
     """
 
-    def __init__(self, history_file_path):
+    def __init__(self, history_file_path: str = "~/.zsh_history"):
         """
 
         :param history_file_path:
         """
-        self.history_file_path = history_file_path
+        self.history_file_path = os.path.expanduser(history_file_path)
         self.entries = self._get_entries()
         logger.info(f"{len(self.entries)} history entries read from {self.history_file_path}")
 
@@ -99,19 +102,21 @@ class ZshHistory:
         :return:
         """
         lines = self._read_history_file()
+        line_counter = 1
         entries = []
         for current_line in lines:
-            current_line = current_line.strip()
-            if len(current_line) > 0:
-                match_object = parse_history_entry(current_line)
-                if match_object:
-                    entry = ZshHistoryEntry(raw_line=current_line,
-                                            beginning_time=int(match_object.group("beginning_time")),
-                                            elapsed_seconds=int(match_object.group("elapsed_seconds")),
-                                            command=match_object.group("command").strip())
-                    entries.append(entry)
-                else:
-                    logger.warning(f"Impossible to parse the line '{current_line}'")
+            try:
+                current_line = current_line.strip()
+                current_line = current_line.decode("utf-8")
+                if len(current_line) > 0:
+                    entries.append(parse_history_entry(current_line))
+            except HistoryEntryParserError as parser_error:
+                logger.warning(f"Impossible to parse the line {line_counter}: '{current_line}'")
+            except UnicodeError:
+                # Fixme: simply ignore this error for the moment. Check what we can do later on.
+                pass
+
+            line_counter += 1
 
         return entries
 
@@ -120,17 +125,22 @@ class ZshHistory:
         Read history file and yield the lines
         :return:
         """
-
         with open(self.history_file_path, mode="rb") as history:
             for line in history:
-                yield line.decode('utf-8')
+                yield line
 
 
-def parse_history_entry(line: str) -> Optional[Match]:
+def parse_history_entry(line: str) -> ZshHistoryEntry:
     """
-    This function parse a line in the zsh_history file
+    This function parses a line in the zsh_history file
     :param line: example ": 1556053755:0;printenv"
-    :return: a matched object
+    :return: a ZshHistoryEntry
     """
+    match_object = ZSH_COMPILED_REGEX.search(line)
+    if match_object:
+        return ZshHistoryEntry(raw_line=line,
+                               beginning_time=int(match_object.group("beginning_time")),
+                               elapsed_seconds=int(match_object.group("elapsed_seconds")),
+                               command=match_object.group("command").strip())
 
-    return ZSH_COMPILED_REGEX.search(line)
+    raise HistoryEntryParserError(f"The line '{line}' doesn't match the regex {ZSH_HISTORY_ENTRY_REGEX}.")
