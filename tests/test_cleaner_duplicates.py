@@ -44,8 +44,6 @@ def test_without_duplicate_commands(tmpdir):
     hist_file.write(f"""
     : 1583848895:0;rm CHANGELOG.md
     : 1583848896:0;ls
-
-
     """)
 
     history = ZshHistory(hist_file.strpath)

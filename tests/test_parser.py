@@ -32,7 +32,7 @@ def test_simple_command():
 
 def test_complex_command():
     """
-
+    Test a complex command with special characters
     :return:
     """
     command = ": 1557138761:0;for d in VWT.*; do l $d; done"
