@@ -3,7 +3,7 @@ import os
 import re
 import time
 from shutil import copy2
-from typing import List
+from typing import List, Optional
 
 # Regex to parse an entry in the history file
 from zshhistorycleaner.exceptions import HistoryEntryParserError
@@ -71,23 +71,27 @@ class ZshHistory:
         self.entries = self._get_entries()
         logger.info(f"{len(self.entries)} history entries read from {self.history_file_path}")
 
-    def save(self, backup: bool = True, output_file_path=None):
+    def save(self, backup: bool = True, output_file_path: str = None) -> Optional[str]:
         """
         Save the entries in
-        :param backup: if True, a backup will be created to {.history_file_path}.{timestamp}
+        :param backup: if True, a backup will be created to {history_file_path}.{timestamp}
         :param output_file_path: the file in which save the history. Default to self.history_file_path
-        :return:
+        :return: If backup is true, the backup file path is returned. None otherwise.
         """
+        backup_file_path = None
         if backup:
             backup_file_path = f"{self.history_file_path}.{int(time.time())}"
             logger.info(f"Backing up '{self.history_file_path}' to '{backup_file_path}'")
             copy2(self.history_file_path, backup_file_path)
-        output_file_path = output_file_path or self.history_file_path
 
+        output_file_path = output_file_path or self.history_file_path
+        logger.info(f"Saving history to {output_file_path}")
         with open(output_file_path, "w") as f:
             for e in self.entries:
                 f.write(e.raw_line)
                 f.write("\n")
+
+        return backup_file_path
 
     def remove_duplicates(self):
         """
@@ -98,7 +102,7 @@ class ZshHistory:
 
     def _get_entries(self) -> List[ZshHistoryEntry]:
         """
-        Get the entries from
+        Get the entries from the history file
         :return:
         """
         lines = self._read_history_file()
