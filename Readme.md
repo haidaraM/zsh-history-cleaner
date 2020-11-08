@@ -3,7 +3,7 @@
 ![Test and Lint](https://github.com/haidaraM/zsh-history-cleaner/workflows/Test%20and%20Lint/badge.svg)
 
 A command line tool to clean your .zsh history:
- - Remove duplicate commands
+ - Remove duplicate commands: the first command is kept among the duplicates.
  - Remove commands matching some patterns (TODO)
  - Remove commands from a specific time range (TODO)
 
@@ -34,4 +34,4 @@ $ git clone https://github.com/haidaraM/zsh-history-cleaner
 $ pipenv install --dev
 $ pipenv shell
 $ cd tests && pytest 
-``` 
+```
