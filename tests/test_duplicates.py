@@ -14,8 +14,10 @@ def test_only_duplicate_commands(tmpdir):
 
     assert len(history.entries) == 2
     history.remove_duplicates()
+
     assert len(history.entries) == 1
     assert history.entries[0].command == "rm CHANGELOG.md"
+    assert history.entries[0].beginning_time == 1583848895, "Only the first command is kept when removing duplicates."
 
 
 def test_without_duplicate_commands(tmpdir):
@@ -33,6 +35,8 @@ def test_without_duplicate_commands(tmpdir):
     assert len(history.entries) == 2
     history.remove_duplicates()
     assert len(history.entries) == 2
+    assert history.entries[0].command == "rm CHANGELOG.md"
+    assert history.entries[1].command == "ls"
 
 
 def test_order_of_entries_after_duplicates_removal(tmpdir):

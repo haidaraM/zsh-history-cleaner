@@ -46,7 +46,6 @@ def main(args=None):
 
     if entries_number != len(history.entries):
         if not dry_run:
-            logger.info("Saving")
             history.save(backup=parsed_args.no_backup)
 
 

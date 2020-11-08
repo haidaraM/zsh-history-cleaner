@@ -81,11 +81,11 @@ class ZshHistory:
         backup_file_path = None
         if backup:
             backup_file_path = f"{self.history_file_path}.{int(time.time())}"
-            logger.info(f"Backing up '{self.history_file_path}' to '{backup_file_path}'")
+            logger.info(f"Backing up history to '{backup_file_path}'")
             copy2(self.history_file_path, backup_file_path)
 
         output_file_path = output_file_path or self.history_file_path
-        logger.info(f"Saving history to {output_file_path}")
+        logger.info(f"Saving history to '{output_file_path}'")
         with open(output_file_path, "w") as f:
             for e in self.entries:
                 f.write(e.raw_line)
