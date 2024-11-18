@@ -2,7 +2,15 @@
 name = "zsh-history-cleaner"
 version = "0.1.0"
 edition = "2021"
+description = "Clean your Zsh history."
+repository = "https://github.com/haidaraM/zsh-history-cleaner"
+readme = "README.md"
+license = "MIT"
+categories = ["command-line-utilities", "filesystem"]
+authors = ["Mohamed El Mouctar HAIDARA"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+thiserror = "2.0.3"
+regex = "1.11.1"
