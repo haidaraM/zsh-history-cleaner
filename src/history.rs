@@ -1,5 +1,6 @@
 use crate::errors;
 use regex::Regex;
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
 
@@ -21,13 +22,11 @@ pub struct HistoryEntry {
     duration: Duration,
 }
 
-impl HistoryEntry {
-    /// Provides a human-readable description of the history entry.
-    ///
-    /// # Returns
-    /// A string summarizing the command, timestamp, and duration.
-    pub fn describe(&self) -> String {
-        format!(
+/// Provides a human-readable description of the history entry.
+impl Display for HistoryEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "Command: '{}', Executed at: {}, Duration: {}s",
             self.command,
             self.timestamp,
@@ -64,8 +63,8 @@ impl TryFrom<String> for HistoryEntry {
 
     fn try_from(history_line: String) -> Result<Self, Self::Error> {
         // TODO: Do not compile this here. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
-        let re =
-            Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*)").unwrap();
+        let re = Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*)")
+            .unwrap();
 
         match re.captures(&history_line) {
             Some(caps) => {
@@ -97,21 +96,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parsing_history_entry_from_string() {
-        let entry = HistoryEntry::try_from(": 1731884069:0;sleep 2".to_string()).unwrap();
+    fn test_parsing_simple_history_entry() {
+        let sleep = HistoryEntry::try_from(": 1731884069:0;sleep 2".to_string()).unwrap();
 
-        assert_eq!(entry.command, "sleep 2".to_string());
-        assert_eq!(entry.timestamp, 1731884069);
-        assert_eq!(entry.duration, Duration::from_secs(0));
+        assert_eq!(sleep.command, "sleep 2".to_string());
+        assert_eq!(sleep.timestamp, 1731884069);
+        assert_eq!(sleep.duration, Duration::from_secs(0));
+
+        let cargo_build = HistoryEntry::try_from(": 1731884069:10;cargo build").unwrap();
+
+        assert_eq!(cargo_build.command, "cargo build".to_string());
+        assert_eq!(cargo_build.timestamp, 1731884069);
+        assert_eq!(cargo_build.duration, Duration::from_secs(10));
     }
 
     #[test]
-    fn test_parsing_history_entry_from_str() {
-        let entry = HistoryEntry::try_from(": 1731884069:10;sleep 2").unwrap();
+    fn test_parsing_complex_history_entry() {
+        let complex =
+            HistoryEntry::try_from(": 1731317544:12;for d in VWT.*; do l $d; done").unwrap();
 
-        assert_eq!(entry.command, "sleep 2".to_string());
-        assert_eq!(entry.timestamp, 1731884069);
-        assert_eq!(entry.duration, Duration::from_secs(10));
+        assert_eq!(complex.command, "for d in VWT.*; do l $d; done".to_string());
+        assert_eq!(complex.timestamp, 1731317544);
+        assert_eq!(complex.duration, Duration::from_secs(12));
     }
 
     #[test]
@@ -119,11 +125,26 @@ mod tests {
         let entry = HistoryEntry::try_from(": 1731884069;");
         assert!(entry.is_err());
     }
-    
+
+    #[test]
+    fn test_parsing_history_entry_from_invalid_timestamp() {
+        let entry = HistoryEntry::try_from(": 1731884069:-10;sleep 2");
+        assert!(entry.is_err());
+    }
+
     #[test]
     fn test_entry_equality() {
         let entry_1 = HistoryEntry::try_from(": 1731884069:0;ls".to_string()).unwrap();
         let entry_2 = HistoryEntry::try_from(": 1731084669:10;ls".to_string()).unwrap();
         assert_eq!(entry_1, entry_2);
+    }
+
+    #[test]
+    fn test_display_history() {
+        let history = HistoryEntry::try_from(": 1731884069:10;cd ~").unwrap();
+        assert_eq!(
+            "Command: 'cd ~', Executed at: 1731884069, Duration: 10s",
+            format!("{}", history)
+        );
     }
 }
