@@ -1,4 +1,3 @@
-use std::process::ExitCode;
 use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum HistoryError {

@@ -6,14 +6,14 @@ use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 pub struct History {
     /// The filename where the history was read
     filename: String,
 
     /// The history entries
-    pub(crate) entries: Vec<HistoryEntry>,
+    pub entries: Vec<HistoryEntry>,
 }
 
 impl History {
@@ -40,7 +40,17 @@ impl History {
         })
     }
 
-    pub fn write_to_file(&self, backup: bool) -> Result<(), errors::HistoryError> {
+    /// Write the history to the filesystem and optional take a backup
+    pub fn write(&self, backup: bool) -> Result<(), errors::HistoryError> {
+        if backup {
+            let now = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            let backup_path = format!("{}{}", self.filename, now);
+            todo!("Write the backup file");
+        }
+        todo!("Replace the file");
         Ok(())
     }
 }

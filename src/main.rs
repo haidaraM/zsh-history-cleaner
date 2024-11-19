@@ -1,9 +1,7 @@
-mod errors;
-mod history;
-
 use std::process::ExitCode;
 
 use clap::{ArgAction, Parser};
+use zsh_history_cleaner::history;
 
 /// Clean your history by removing duplicate commands, commands matching regex etc...
 #[derive(Parser, Debug)]
