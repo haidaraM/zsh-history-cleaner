@@ -7,7 +7,8 @@ A command line tool to clean your .zsh history by:
 - Removing commands from a specific time range (TODO)
 
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming langage (it's my
-> first project in Rust).
+> first project in Rust). As such, do not expect the project to be a full-featured solution for cleaning your history
+> file.
 
 ## Usage
 

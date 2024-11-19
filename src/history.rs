@@ -1,8 +1,49 @@
 use crate::errors;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
+use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::io::{BufRead, BufReader};
+use std::path::Path;
 use std::time::Duration;
+
+pub struct History {
+    /// The filename where the history was read
+    filename: String,
+
+    /// The history entries
+    pub(crate) entries: Vec<HistoryEntry>,
+}
+
+impl History {
+    /// Reads a Zsh history file and populates a `History` struct.
+    pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self, errors::HistoryError> {
+        let path_ref = filepath.as_ref();
+        let name = path_ref.to_string_lossy().to_string();
+
+        let file = File::open(&path_ref)
+            .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+        let reader = BufReader::new(file);
+
+        let entries = reader
+            .lines()
+            .filter_map(|line| {
+                line.ok()
+                    .and_then(|line_str| HistoryEntry::try_from(line_str).ok())
+            })
+            .collect::<Vec<HistoryEntry>>();
+
+        Ok(History {
+            filename: name,
+            entries,
+        })
+    }
+
+    pub fn write_to_file(&self, backup: bool) -> Result<(), errors::HistoryError> {
+        Ok(())
+    }
+}
 
 /// Represents a single history entry from a Zsh history file.
 ///
@@ -16,7 +57,7 @@ pub struct HistoryEntry {
     command: String,
 
     /// The UNIX timestamp when the command was executed.
-    timestamp: u64, // TODO: change this a real timestamp
+    timestamp: u64, // TODO: change this a real timestamp using when dealing with commands between specific dates
 
     /// The time it took to execute the command.
     duration: Duration,
@@ -34,12 +75,11 @@ impl Display for HistoryEntry {
         )
     }
 }
-
+/// Custom hash implementation, only considers the `command` field.
+///
+/// This ensures that entries with the same command are treated as identical,
+/// regardless of their timestamp or duration.
 impl Hash for HistoryEntry {
-    /// Custom hash implementation, only considers the `command` field.
-    ///
-    /// This ensures that entries with the same command are treated as identical,
-    /// regardless of their timestamp or duration.
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.command.hash(state);
     }
@@ -58,16 +98,19 @@ impl PartialEq for HistoryEntry {
     }
 }
 
+// Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
+static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*)").unwrap()
+});
+
 impl TryFrom<String> for HistoryEntry {
     type Error = errors::HistoryError;
 
     fn try_from(history_line: String) -> Result<Self, Self::Error> {
-        // TODO: Do not compile this here. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
-        let re = Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*)")
-            .unwrap();
-
-        match re.captures(&history_line) {
-            Some(caps) => {
+        HISTORY_LINE_REGEX
+            .captures(&history_line)
+            .ok_or_else(|| errors::HistoryError::EntryMatchingError(history_line.clone()))
+            .and_then(|caps| {
                 let timestamp: u64 = caps["timestamp"].parse()?;
                 let elapsed_seconds: u64 = caps["elapsed_seconds"].parse()?;
                 let command = caps["command"].trim().to_string();
@@ -77,9 +120,7 @@ impl TryFrom<String> for HistoryEntry {
                     timestamp,
                     duration: Duration::from_secs(elapsed_seconds),
                 })
-            }
-            None => Err(errors::HistoryError::MatchingError(history_line)),
-        }
+            })
     }
 }
 
@@ -121,13 +162,16 @@ mod tests {
     }
 
     #[test]
-    fn test_parsing_history_entry_from_invalid() {
+    fn test_parsing_history_entry_no_matching() {
         let entry = HistoryEntry::try_from(": 1731884069;");
-        assert!(entry.is_err());
+        assert!(matches!(
+            entry.unwrap_err(),
+            errors::HistoryError::EntryMatchingError(_)
+        ));
     }
 
     #[test]
-    fn test_parsing_history_entry_from_invalid_timestamp() {
+    fn test_parsing_history_entry_from_invalid_duration() {
         let entry = HistoryEntry::try_from(": 1731884069:-10;sleep 2");
         assert!(entry.is_err());
     }
