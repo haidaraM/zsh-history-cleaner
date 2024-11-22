@@ -4,7 +4,7 @@ use regex::Regex;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
@@ -22,7 +22,7 @@ impl History {
         let path_ref = filepath.as_ref();
         let name = path_ref.to_string_lossy().to_string();
 
-        let file = File::open(&path_ref)
+        let file = File::open(path_ref)
             .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
         let reader = BufReader::new(file);
 
@@ -47,10 +47,22 @@ impl History {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_secs();
-            let backup_path = format!("{}{}", self.filename, now);
-            todo!("Write the backup file");
+            let backup_path = format!("{}.{}", self.filename, now);
+
+            println!("Backing up the history to '{backup_path}'...");
+            let backup_file = File::create(&backup_path)
+                .map_err(|e| errors::HistoryError::IoError(backup_path, e.to_string()))?;
+
+            let mut writer = BufWriter::new(backup_file);
+
+            for entry in &self.entries {
+                let line = format!("{}\n", entry.to_history_line());
+                writer.write_all(line.as_ref()).unwrap();
+            }
+
+            writer.flush().unwrap();
         }
-        todo!("Replace the file");
+
         Ok(())
     }
 }
@@ -71,6 +83,26 @@ pub struct HistoryEntry {
 
     /// The time it took to execute the command.
     duration: Duration,
+}
+
+impl HistoryEntry {
+    /// Converts the `HistoryEntry` into the Zsh history file format.
+    pub fn to_history_line(&self) -> String {
+        format!(
+            ": {};{};{}",
+            self.timestamp,
+            self.duration.as_secs(),
+            self.command
+        )
+    }
+
+    pub fn command(&self) -> &str {
+        &self.command
+    }
+
+    pub fn duration(&self) -> &Duration {
+        &self.duration
+    }
 }
 
 /// Provides a human-readable description of the history entry.
@@ -191,6 +223,9 @@ mod tests {
         let entry_1 = HistoryEntry::try_from(": 1731884069:0;ls".to_string()).unwrap();
         let entry_2 = HistoryEntry::try_from(": 1731084669:10;ls".to_string()).unwrap();
         assert_eq!(entry_1, entry_2);
+
+        let entry_3 = HistoryEntry::try_from(": 1731884069;1;terraform apply".to_string()).unwrap();
+        assert_ne!(entry_1, entry_3);
     }
 
     #[test]

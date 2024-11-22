@@ -7,6 +7,6 @@ pub enum HistoryError {
     #[error("Failed to parse integer: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
 
-    #[error("Error when reading the file '{0}': {1}")]
+    #[error("Error when handling the file '{0}': {1}")]
     IoError(String, String),
 }

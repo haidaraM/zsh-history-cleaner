@@ -30,7 +30,10 @@ fn main() -> ExitCode {
                 history.entries.len(),
                 cli.history_file
             );
-
+            if let Err(error) = history.write(cli.no_backup) {
+                eprintln!("{}", error);
+                return ExitCode::from(1);
+            }
             ExitCode::from(0)
         }
         Err(e) => {
