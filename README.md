@@ -16,7 +16,7 @@ By default, the duplicates command are removed from the history.
 
 **Note that multilines command with backslash are not supported yet.**
 
-```shell
+```
 Clean your history by removing duplicate commands, commands matching regex etc...
 
 Usage: zhc [OPTIONS]
