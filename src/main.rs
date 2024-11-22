@@ -4,6 +4,8 @@ use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
 
 /// Clean your history by removing duplicate commands, commands matching regex etc...
+///
+/// By default, all the duplicate commands are removed.
 #[derive(Parser, Debug)]
 #[command(version, about, long_about)]
 struct Cli {
@@ -32,10 +34,16 @@ fn main() -> ExitCode {
 }
 
 fn run(cli: Cli) -> Result<(), String> {
-    let history = history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
+    let mut history =
+        history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
+
+    if history.entries.is_empty() {
+        println!("No entries found in the history file '{}'.", cli.history_file);
+        return Ok(());
+    }
 
     println!(
-        "Found {} entries in '{}'",
+        "{} entries in '{}'",
         history.entries.len(),
         cli.history_file
     );
@@ -44,6 +52,8 @@ fn run(cli: Cli) -> Result<(), String> {
         println!("Dry run enabled. No changes will be made.");
         return Ok(());
     }
+
+    history.remove_duplicates();
 
     history.write(cli.no_backup).map_err(|err| err.to_string())
 }
