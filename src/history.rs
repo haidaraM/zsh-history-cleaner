@@ -89,7 +89,7 @@ impl HistoryEntry {
     /// Converts the `HistoryEntry` into the Zsh history file format.
     pub fn to_history_line(&self) -> String {
         format!(
-            ": {};{};{}",
+            ": {}:{};{}",
             self.timestamp,
             self.duration.as_secs(),
             self.command
@@ -194,6 +194,13 @@ mod tests {
     }
 
     #[test]
+    fn test_to_history_line() {
+        let cmd = ": 1731317544:12;for d in VWT.*; do l $d; done";
+        let for_loop = HistoryEntry::try_from(cmd).unwrap();
+        assert_eq!(for_loop.to_history_line(), cmd.to_string());
+    }
+
+    #[test]
     fn test_parsing_complex_history_entry() {
         let complex =
             HistoryEntry::try_from(": 1731317544:12;for d in VWT.*; do l $d; done").unwrap();
@@ -224,7 +231,7 @@ mod tests {
         let entry_2 = HistoryEntry::try_from(": 1731084669:10;ls".to_string()).unwrap();
         assert_eq!(entry_1, entry_2);
 
-        let entry_3 = HistoryEntry::try_from(": 1731884069;1;terraform apply".to_string()).unwrap();
+        let entry_3 = HistoryEntry::try_from(": 1731084669:1;terraform apply".to_string()).unwrap();
         assert_ne!(entry_1, entry_3);
     }
 
