@@ -52,7 +52,8 @@ impl History {
             fs::copy(&self.filename, backup_path.clone())
                 .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
         }
-
+        
+        // TODO: write the entries to the file
         Ok(())
     }
 
