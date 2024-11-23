@@ -1,8 +1,9 @@
 use crate::errors;
 use crate::history_entry::HistoryEntry;
 use std::collections::HashSet;
+use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -15,7 +16,7 @@ pub struct History {
 }
 
 impl History {
-    /// Reads a Zsh history file and populates a `History` struct.
+    /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self, errors::HistoryError> {
         let path_ref = filepath.as_ref();
         let name = path_ref.to_string_lossy().to_string();
@@ -38,27 +39,18 @@ impl History {
         })
     }
 
-    /// Write the history to the filesystem and optional take a backup
+    /// Write the history to the filesystem and optionally take a backup
     pub fn write(&self, backup: bool) -> Result<(), errors::HistoryError> {
         if backup {
             let now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
+                .expect("The SystemTime is before UNIX EPOCH! which should not happen!")
                 .as_secs();
             let backup_path = format!("{}.{}", self.filename, now);
 
             println!("Backing up the history to '{backup_path}'...");
-            let backup_file = File::create(&backup_path)
-                .map_err(|e| errors::HistoryError::IoError(backup_path, e.to_string()))?;
-
-            let mut writer = BufWriter::new(backup_file);
-
-            for entry in &self.entries {
-                let line = format!("{}\n", entry.to_history_line());
-                writer.write_all(line.as_ref()).unwrap();
-            }
-
-            writer.flush().unwrap();
+            fs::copy(&self.filename, backup_path.clone())
+                .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
         }
 
         Ok(())
@@ -73,11 +65,21 @@ impl History {
             .retain(|entry| seen.insert(entry.command().to_string()));
 
         let percent_of_duplicate =
-            (before_count - self.entries.len() as f64) / before_count * 100_f64;
+            (before_count - self.entries.len() as f64) / before_count * 100.0;
 
         println!(
             "{} entries after removing duplicates ({percent_of_duplicate:.0}% of duplicates).",
             self.entries.len(),
         );
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_file() {}
 }

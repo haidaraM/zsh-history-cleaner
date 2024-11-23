@@ -83,7 +83,7 @@ impl TryFrom<String> for HistoryEntry {
             .and_then(|caps| {
                 let timestamp: u64 = caps["timestamp"].parse()?;
                 let elapsed_seconds: u64 = caps["elapsed_seconds"].parse()?;
-                let command = caps["command"].trim().to_string();
+                let command: String = caps["command"].trim().to_string();
 
                 Ok(HistoryEntry {
                     command,

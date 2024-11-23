@@ -34,28 +34,6 @@ class ZshHistoryEntry:
         self.elapsed_seconds = elapsed_seconds
         self.beginning_time = beginning_time
 
-    def __repr__(self):
-        """
-
-        :return:
-        """
-        return f"{self.__class__.__name__}('{self.command}')"
-
-    def __hash__(self):
-        """
-        Hash used to remove duplicates
-        :return:
-        """
-        return hash(self.command)
-
-    def __eq__(self, other):
-        """
-        Two history entries are equal if the command are equal
-        :param other:
-        :return:
-        """
-        return isinstance(other, self.__class__) and self.command == other.command
-
 
 class ZshHistory:
     """
@@ -93,13 +71,6 @@ class ZshHistory:
 
         return backup_file_path
 
-    def remove_duplicates(self):
-        """
-        Remove duplicate commands.
-        :return:
-        """
-        self.entries = sorted(list(set(self.entries)), key=lambda ent: ent.beginning_time)
-
     def _get_entries(self) -> List[ZshHistoryEntry]:
         """
         Get the entries from the history file
@@ -132,19 +103,3 @@ class ZshHistory:
         with open(self.history_file_path, mode="rb") as history:
             for line in history:
                 yield line
-
-
-def parse_history_entry(line: str) -> ZshHistoryEntry:
-    """
-    This function parses a line in the zsh_history file
-    :param line: example ": 1556053755:0;printenv"
-    :return: a ZshHistoryEntry
-    """
-    match_object = ZSH_COMPILED_REGEX.search(line)
-    if match_object:
-        return ZshHistoryEntry(raw_line=line,
-                               beginning_time=int(match_object.group("beginning_time")),
-                               elapsed_seconds=int(match_object.group("elapsed_seconds")),
-                               command=match_object.group("command").strip())
-
-    raise HistoryEntryParserError(f"The line '{line}' doesn't match the regex {ZSH_HISTORY_ENTRY_REGEX}.")

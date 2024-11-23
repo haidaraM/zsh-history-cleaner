@@ -37,8 +37,11 @@ fn run(cli: Cli) -> Result<(), String> {
     let mut history =
         history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
 
-    if history.entries.is_empty() {
-        println!("No entries found in the history file '{}'.", cli.history_file);
+    if history.is_empty() {
+        println!(
+            "No entries found in the history file '{}'.",
+            cli.history_file
+        );
         return Ok(());
     }
 
@@ -48,12 +51,12 @@ fn run(cli: Cli) -> Result<(), String> {
         cli.history_file
     );
 
+    history.remove_duplicates();
+
     if cli.dry_run {
         println!("Dry run enabled. No changes will be made.");
         return Ok(());
     }
-
-    history.remove_duplicates();
 
     history.write(cli.no_backup).map_err(|err| err.to_string())
 }
