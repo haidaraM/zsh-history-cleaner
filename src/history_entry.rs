@@ -6,7 +6,7 @@ use std::time::Duration;
 
 // Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
 static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)").unwrap()
+    Regex::new(r"^: (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)").unwrap()
 });
 
 /// Represents a single history entry from a Zsh history file.
@@ -36,6 +36,10 @@ impl HistoryEntry {
             self.duration.as_secs(),
             self.command
         )
+    }
+
+    pub fn timestamp(&self) -> &u64 {
+        &self.timestamp
     }
 
     pub fn command(&self) -> &str {
@@ -131,6 +135,19 @@ mod tests {
 
         assert_eq!(entry.timestamp, 1731622185);
         assert_eq!(entry.duration, Duration::from_secs(9));
+        assert_eq!(entry.command, expected_cmd);
+    }
+
+    #[test]
+    fn test_multiline_command_back_slash_at_the_end() {
+        let cmd = r#": 1732663091:0;echo 'hello hacha\
+world'\"#;
+        let entry = HistoryEntry::try_from(cmd).unwrap();
+        let expected_cmd = r#"echo 'hello hacha\
+world'\"#;
+
+        assert_eq!(entry.timestamp, 1732663091);
+        assert_eq!(entry.duration, Duration::from_secs(0));
         assert_eq!(entry.command, expected_cmd);
     }
 

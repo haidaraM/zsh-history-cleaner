@@ -47,7 +47,7 @@ fn run(cli: Cli) -> Result<(), String> {
 
     println!(
         "{} entries in '{}'",
-        history.entries.len(),
+        history.size(),
         cli.history_file
     );
 

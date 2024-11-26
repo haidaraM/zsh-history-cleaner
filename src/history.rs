@@ -12,9 +12,11 @@ pub struct History {
     filename: String,
 
     /// The history entries
-    pub entries: Vec<HistoryEntry>,
+    entries: Vec<HistoryEntry>,
 }
 
+/// Reads a Zsh history file and processes its contents into a vector of complete commands.
+/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
 fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
     let mut commands = Vec::new();
     let mut current_command = String::new();
@@ -22,7 +24,7 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
     let path_ref = filepath.as_ref();
     let name = path_ref.to_string_lossy().to_string();
 
-    let file = File::open(path_ref)
+    let file = File::open(filepath)
         .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
     let reader = BufReader::new(file);
 
@@ -49,7 +51,7 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
 
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
-    pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self, errors::HistoryError> {
+    pub fn from_file<P: AsRef<Path>>(filepath: &P) -> Result<Self, errors::HistoryError> {
         let commands = preprocess_history(&filepath)?;
 
         let entries = commands
@@ -98,6 +100,10 @@ impl History {
         );
     }
 
+    pub fn size(&self) -> usize {
+        self.entries.len()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
@@ -105,6 +111,57 @@ impl History {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::io::Write;
+    use std::time::Duration;
+    use tempfile::NamedTempFile;
+
+    fn get_tmp_file(commands: &str) -> NamedTempFile {
+        let mut tmpfile =
+            NamedTempFile::new().expect("The tests should be able to create a temporary file!");
+
+        let path = tmpfile.path().to_string_lossy().to_string();
+        let msg = format!("We should able to write to the temporary file '{path}'").clone();
+
+        tmpfile.write_all(commands.as_bytes()).expect(&msg);
+
+        tmpfile
+    }
+
     #[test]
-    fn test_from_file() {}
+    fn test_empty_history() {
+        assert_eq!(History::from_file(&get_tmp_file("")).unwrap().size(), 0);
+    }
+
+    #[test]
+    fn test_from_file() {
+        let cmds = ": 1732577005:0;tf fmt -recursive
+: 1732577037:0;tf apply";
+        let hist_file = get_tmp_file(cmds);
+        let history = History::from_file(&hist_file).unwrap();
+
+        assert_eq!(history.entries.len(), 2, "Wrong number of history entries!");
+
+        assert_eq!(history.entries[0].command(), "tf fmt -recursive");
+        assert_eq!(*history.entries[0].duration(), Duration::from_secs(0));
+        assert_eq!(*history.entries[0].timestamp(), 1732577005);
+
+        assert_eq!(history.entries[1].command(), "tf apply");
+        assert_eq!(*history.entries[1].duration(), Duration::from_secs(0));
+        assert_eq!(*history.entries[1].timestamp(), 1732577037);
+    }
+
+    #[test]
+    fn test_from_file_multiline_commands() {
+        let cmds = r#"
+: 1732659769:0;echo 'hello\
+world'
+: 1732659779:0;echo 'multiple \
+line' \
+: 1732659789:0;reload
+"#;
+        let hist_file = get_tmp_file(cmds);
+        let history = History::from_file(&hist_file).unwrap();
+        assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
+    }
 }
