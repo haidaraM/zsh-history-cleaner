@@ -33,7 +33,7 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
         let trimmed = line.trim_end(); // Trim trailing whitespace
         if trimmed.ends_with('\\') {
             // Remove the backslash and keep appending
-            current_command.push_str(trimmed.strip_suffix('\\').unwrap());
+            current_command.push_str(trimmed.strip_suffix('\\').expect("We should be able to strip the suffix \\"));
         } else {
             // Final line of a command
             current_command.push_str(trimmed);

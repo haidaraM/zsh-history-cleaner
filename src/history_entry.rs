@@ -6,7 +6,8 @@ use std::time::Duration;
 
 // Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
 static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^: (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)").unwrap()
+    Regex::new(r"^: (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)")
+        .expect("The regex to parse the history should compile")
 });
 
 /// Represents a single history entry from a Zsh history file.
@@ -21,7 +22,7 @@ pub struct HistoryEntry {
     command: String,
 
     /// The UNIX timestamp when the command was executed.
-    timestamp: u64, // TODO: change this a real timestamp using when dealing with commands between specific dates
+    timestamp: u64,
 
     /// The time it took to execute the command.
     duration: Duration,
