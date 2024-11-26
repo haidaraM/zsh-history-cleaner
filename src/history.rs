@@ -15,26 +15,50 @@ pub struct History {
     pub entries: Vec<HistoryEntry>,
 }
 
+fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
+    let mut commands = Vec::new();
+    let mut current_command = String::new();
+
+    let path_ref = filepath.as_ref();
+    let name = path_ref.to_string_lossy().to_string();
+
+    let file = File::open(path_ref)
+        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+    let reader = BufReader::new(file);
+
+    for line in reader.lines() {
+        let line = line.map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+        let trimmed = line.trim_end(); // Trim trailing whitespace
+        if trimmed.ends_with('\\') {
+            // Remove the backslash and keep appending
+            current_command.push_str(trimmed.strip_suffix('\\').unwrap());
+        } else {
+            // Final line of a command
+            current_command.push_str(trimmed);
+            commands.push(current_command.clone());
+            current_command.clear();
+        }
+    }
+
+    if !current_command.is_empty() {
+        commands.push(current_command);
+    }
+
+    Ok(commands)
+}
+
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self, errors::HistoryError> {
-        let path_ref = filepath.as_ref();
-        let name = path_ref.to_string_lossy().to_string();
+        let commands = preprocess_history(&filepath)?;
 
-        let file = File::open(path_ref)
-            .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
-        let reader = BufReader::new(file);
-
-        let entries = reader
-            .lines()
-            .filter_map(|line| {
-                line.ok()
-                    .and_then(|line_str| HistoryEntry::try_from(line_str).ok())
-            })
+        let entries = commands
+            .into_iter()
+            .filter_map(|line| HistoryEntry::try_from(line).ok())
             .collect::<Vec<HistoryEntry>>();
 
         Ok(History {
-            filename: name,
+            filename: filepath.as_ref().to_string_lossy().to_string(),
             entries,
         })
     }
@@ -52,7 +76,7 @@ impl History {
             fs::copy(&self.filename, backup_path.clone())
                 .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
         }
-        
+        // TODO: handle multi lines before writing
         // TODO: write the entries to the file
         Ok(())
     }

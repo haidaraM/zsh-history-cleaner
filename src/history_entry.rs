@@ -4,6 +4,11 @@ use regex::Regex;
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
+// Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
+static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)").unwrap()
+});
+
 /// Represents a single history entry from a Zsh history file.
 ///
 /// # Fields
@@ -68,18 +73,13 @@ impl PartialEq for HistoryEntry {
     }
 }
 
-// Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
-static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r": (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*)").unwrap()
-});
-
 impl TryFrom<String> for HistoryEntry {
     type Error = errors::HistoryError;
 
-    fn try_from(history_line: String) -> Result<Self, Self::Error> {
+    fn try_from(history_command: String) -> Result<Self, Self::Error> {
         HISTORY_LINE_REGEX
-            .captures(&history_line)
-            .ok_or_else(|| errors::HistoryError::EntryMatchingError(history_line.clone()))
+            .captures(&history_command)
+            .ok_or_else(|| errors::HistoryError::EntryMatchingError(history_command.clone()))
             .and_then(|caps| {
                 let timestamp: u64 = caps["timestamp"].parse()?;
                 let elapsed_seconds: u64 = caps["elapsed_seconds"].parse()?;
@@ -97,8 +97,8 @@ impl TryFrom<String> for HistoryEntry {
 impl TryFrom<&str> for HistoryEntry {
     type Error = errors::HistoryError;
 
-    fn try_from(history_line: &str) -> Result<Self, Self::Error> {
-        history_line.to_string().try_into()
+    fn try_from(history_command: &str) -> Result<Self, Self::Error> {
+        history_command.to_string().try_into()
     }
 }
 
@@ -119,6 +119,19 @@ mod tests {
         assert_eq!(cargo_build.command, "cargo build".to_string());
         assert_eq!(cargo_build.timestamp, 1731884069);
         assert_eq!(cargo_build.duration, Duration::from_secs(10));
+    }
+
+    #[test]
+    fn test_multiline_command() {
+        let cmd = r#": 1731622185:9;brew update\
+    brew install opentofu"#;
+        let entry = HistoryEntry::try_from(cmd).unwrap();
+        let expected_cmd = r#"brew update\
+    brew install opentofu"#;
+
+        assert_eq!(entry.timestamp, 1731622185);
+        assert_eq!(entry.duration, Duration::from_secs(9));
+        assert_eq!(entry.command, expected_cmd);
     }
 
     #[test]

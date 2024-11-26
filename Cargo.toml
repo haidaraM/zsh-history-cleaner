@@ -11,6 +11,9 @@ authors = ["Mohamed El Mouctar HAIDARA"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+doctest = false
+
 [[bin]]
 name = "zhc"
 path = "src/main.rs"
