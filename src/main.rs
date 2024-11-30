@@ -9,16 +9,16 @@ use zsh_history_cleaner::history;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about)]
 struct Cli {
-    /// Dry run mode. The history file is not modified.
+    /// Dry run mode. The history file is not modified when this flag is used.
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     dry_run: bool,
 
-    /// History file path.
+    /// The history file to use.
     #[arg(short = 'H', long, default_value = "~/.zsh_history")]
     history_file: String,
 
-    /// Disable history file backup. By default, a backup is written to {history_file}.{timestamp} in the current directory. Use with caution!!
-    #[arg(short, long, action = ArgAction::SetFalse)]
+    /// [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory.
+    #[arg(short, long, action = ArgAction::SetFalse, default_value = "false")]
     no_backup: bool,
 }
 
@@ -45,11 +45,7 @@ fn run(cli: Cli) -> Result<(), String> {
         return Ok(());
     }
 
-    println!(
-        "{} entries in '{}'",
-        history.size(),
-        cli.history_file
-    );
+    println!("{} entries in '{}'", history.size(), cli.history_file);
 
     history.remove_duplicates();
 

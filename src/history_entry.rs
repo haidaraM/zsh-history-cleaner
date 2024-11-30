@@ -6,7 +6,7 @@ use std::time::Duration;
 
 // Compile regex once and reuse. See https://docs.rs/regex/latest/regex/#avoid-re-compiling-regexes-especially-in-a-loop
 static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^: (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)?)")
+    Regex::new(r"^: (?P<timestamp>\d{10}):(?P<elapsed_seconds>\d+);(?P<command>.*(\n.*)*)")
         .expect("The regex to parse the history should compile")
 });
 
@@ -110,6 +110,7 @@ impl TryFrom<&str> for HistoryEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::{assert_eq, assert_ne};
 
     #[test]
     fn test_parsing_simple_history_entry() {
@@ -127,15 +128,34 @@ mod tests {
     }
 
     #[test]
-    fn test_multiline_command() {
+    fn test_two_lines_command() {
         let cmd = r#": 1731622185:9;brew update\
-    brew install opentofu"#;
+brew install opentofu"#;
         let entry = HistoryEntry::try_from(cmd).unwrap();
         let expected_cmd = r#"brew update\
-    brew install opentofu"#;
+brew install opentofu"#;
 
         assert_eq!(entry.timestamp, 1731622185);
         assert_eq!(entry.duration, Duration::from_secs(9));
+        assert_eq!(entry.command, expected_cmd);
+    }
+
+    #[test]
+    fn test_multiple_lines_command() {
+        let cmd = r#": 1733005037:0;docker run -d --name mysql \\
+-v mysql:/var/lib/mysql \\
+-e MYSQL_ROOT_PASSWORD=vaalala -e MYSQL_DATABASE=vaalala -e MYSQL_USER=vaalala \\
+-e MYSQL_PASSWORD=vaalala \\
+-p 3306:3306 mysql:8
+"#;
+        let entry = HistoryEntry::try_from(cmd).unwrap();
+
+        let expected_cmd = r#"docker run -d --name mysql \\
+-v mysql:/var/lib/mysql \\
+-e MYSQL_ROOT_PASSWORD=vaalala -e MYSQL_DATABASE=vaalala -e MYSQL_USER=vaalala \\
+-e MYSQL_PASSWORD=vaalala \\
+-p 3306:3306 mysql:8"#;
+        println!("{}", entry.command);
         assert_eq!(entry.command, expected_cmd);
     }
 

@@ -33,7 +33,11 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
         let trimmed = line.trim_end(); // Trim trailing whitespace
         if trimmed.ends_with('\\') {
             // Remove the backslash and keep appending
-            current_command.push_str(trimmed.strip_suffix('\\').expect("We should be able to strip the suffix \\"));
+            current_command.push_str(
+                trimmed
+                    .strip_suffix('\\')
+                    .expect("We should be able to strip the suffix \\"),
+            );
         } else {
             // Final line of a command
             current_command.push_str(trimmed);
@@ -52,6 +56,8 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: &P) -> Result<Self, errors::HistoryError> {
+        // TODO: expand user in the filepath.
+
         let commands = preprocess_history(&filepath)?;
 
         let entries = commands
@@ -78,7 +84,6 @@ impl History {
             fs::copy(&self.filename, backup_path.clone())
                 .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
         }
-        // TODO: handle multi lines before writing
         // TODO: write the entries to the file
         Ok(())
     }
@@ -112,6 +117,7 @@ impl History {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
     use std::io::Write;
     use std::time::Duration;
     use tempfile::NamedTempFile;
@@ -157,11 +163,13 @@ mod tests {
 : 1732659769:0;echo 'hello\
 world'
 : 1732659779:0;echo 'multiple \
-line' \
+line'
 : 1732659789:0;reload
 "#;
         let hist_file = get_tmp_file(cmds);
         let history = History::from_file(&hist_file).unwrap();
+        println!("{:?}", history.entries);
+
         assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
     }
 }
