@@ -13,13 +13,17 @@ struct Cli {
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     dry_run: bool,
 
-    /// The history file to use.
+    /// The history file to use
     #[arg(short = 'H', long, default_value = "~/.zsh_history")]
     history_file: String,
 
     /// [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory.
     #[arg(short, long, action = ArgAction::SetFalse)]
     no_backup: bool,
+
+    /// Should we keep duplicate commands in the history file
+    #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
+    keep_duplicates: bool,
 }
 
 fn main() -> ExitCode {
@@ -47,7 +51,9 @@ fn run(cli: Cli) -> Result<(), String> {
 
     println!("{} entries in '{}'", history.size(), cli.history_file);
 
-    history.remove_duplicates();
+    if !cli.keep_duplicates {
+        history.remove_duplicates();
+    }
 
     if cli.dry_run {
         println!("Dry run enabled. No changes will be made.");

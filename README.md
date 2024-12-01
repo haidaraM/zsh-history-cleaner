@@ -36,6 +36,9 @@ Options:
   -n, --no-backup
           [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory
 
+  -k, --keep-duplicates
+          Should we keep duplicate commands in the history file
+
   -h, --help
           Print help (see a summary with '-h')
 
