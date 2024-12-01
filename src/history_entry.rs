@@ -88,7 +88,7 @@ impl TryFrom<String> for HistoryEntry {
             .and_then(|caps| {
                 let timestamp: u64 = caps["timestamp"].parse()?;
                 let elapsed_seconds: u64 = caps["elapsed_seconds"].parse()?;
-                let command: String = caps["command"].trim().to_string();
+                let command: String = caps["command"].to_string();
 
                 Ok(HistoryEntry {
                     command,
@@ -154,7 +154,8 @@ brew install opentofu"#;
 -v mysql:/var/lib/mysql \\
 -e MYSQL_ROOT_PASSWORD=vaalala -e MYSQL_DATABASE=vaalala -e MYSQL_USER=vaalala \\
 -e MYSQL_PASSWORD=vaalala \\
--p 3306:3306 mysql:8"#;
+-p 3306:3306 mysql:8
+"#;
         println!("{}", entry.command);
         assert_eq!(entry.command, expected_cmd);
     }

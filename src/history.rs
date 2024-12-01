@@ -33,14 +33,14 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
         let trimmed = line.trim_end(); // Trim trailing whitespace
         if trimmed.ends_with('\\') {
             // Remove the backslash and keep appending
-            current_command.push_str(
-                trimmed
-                    .strip_suffix('\\')
-                    .expect("We should be able to strip the suffix \\"),
-            );
-        } else {
-            // Final line of a command
             current_command.push_str(trimmed);
+        } else {
+            if !current_command.is_empty() {
+                // Still appending a multi line command
+                current_command.push('\n');
+            }
+            current_command.push_str(trimmed);
+
             commands.push(current_command.clone());
             current_command.clear();
         }
@@ -59,6 +59,7 @@ impl History {
         // TODO: expand user in the filepath.
 
         let commands = preprocess_history(&filepath)?;
+        println!("{:#?}", commands);
 
         let entries = commands
             .into_iter()
@@ -139,10 +140,13 @@ mod tests {
 
     #[test]
     fn test_from_file() {
-        let cmds = ": 1732577005:0;tf fmt -recursive
-: 1732577037:0;tf apply";
-        let hist_file = get_tmp_file(cmds);
-        let history = History::from_file(&hist_file).unwrap();
+        let cmds = [
+            ": 1732577005:0;tf fmt -recursive",
+            ": 1732577037:0;tf apply",
+        ];
+
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
 
         assert_eq!(history.entries.len(), 2, "Wrong number of history entries!");
 
@@ -157,17 +161,37 @@ mod tests {
 
     #[test]
     fn test_from_file_multiline_commands() {
-        let cmds = r#"
-: 1732659769:0;echo 'hello\
-world'
-: 1732659779:0;echo 'multiple \
-line'
-: 1732659789:0;reload
-"#;
-        let hist_file = get_tmp_file(cmds);
-        let history = History::from_file(&hist_file).unwrap();
-        println!("{:?}", history.entries);
+        let cmds = [
+            r#": 1733015058:0;echo 'hello hacha \
+world'"#,
+            r#": 1732659779:0;echo 'multiple \
+line'"#,
+            r#": 1732659789:0;reload"#,
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
 
         assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
+        
+        // First command
+        assert_eq!(
+            history.entries[0].command(),
+            r#"echo 'hello hacha \
+world'"#
+        );
+        
+        
+        // Second command
+        assert_eq!(
+            history.entries[1].command(),
+            r#"echo 'multiple \
+line'"#
+        );
+        
+        // Third command
+        assert_eq!(history.entries[2].command(), "reload");
     }
+
+    #[test]
+    fn test_remove_duplicates() {}
 }
