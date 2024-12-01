@@ -1,11 +1,11 @@
 use crate::errors;
 use crate::history_entry::HistoryEntry;
+use chrono::Local;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::time::SystemTime;
 
 pub struct History {
     /// The filename where the history was read
@@ -74,10 +74,8 @@ impl History {
     /// Write the history to the filesystem and optionally take a backup
     pub fn write(&self, backup: bool) -> Result<(), errors::HistoryError> {
         if backup {
-            let now = SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .expect("The SystemTime is before UNIX EPOCH! which should not happen!")
-                .as_secs();
+            let now = Local::now().format("%Y-%m-%d-%H:%M:%S%.3f").to_string();
+
             let backup_path = format!("{}.{}", self.filename, now);
 
             println!("Backing up the history to '{backup_path}'...");

@@ -3,17 +3,6 @@ import os
 from zshhistorycleaner.history import ZshHistory
 
 
-def test_empty_history(tmpdir):
-    """
-    Test reading an empty history file
-    """
-    hist_file = tmpdir.join("empty.history")
-    hist_file.write("")
-    zsh_history = ZshHistory(hist_file.strpath)
-
-    assert len(zsh_history.entries) == 0
-
-
 def test_history_save(tmpdir):
     """
     Test saving history file

@@ -18,7 +18,7 @@ struct Cli {
     history_file: String,
 
     /// [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory.
-    #[arg(short, long, action = ArgAction::SetFalse, default_value = "false")]
+    #[arg(short, long, action = ArgAction::SetFalse)]
     no_backup: bool,
 }
 

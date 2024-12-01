@@ -20,25 +20,28 @@ By default, the duplicates command are removed from the history.
 ```
 Clean your history by removing duplicate commands, commands matching regex etc...
 
+By default, all the duplicate commands are removed.
+
 Usage: zhc [OPTIONS]
 
 Options:
   -d, --dry-run
-          Dry run mode. The history file is not modified
+          Dry run mode. The history file is not modified when this flag is used
 
   -H, --history-file <HISTORY_FILE>
-          History file path
-
+          The history file to use
+          
           [default: ~/.zsh_history]
 
   -n, --no-backup
-          Disable history file backup. By default, a backup is written to {history_file}.{timestamp} in the current directory. Use with caution!!
+          [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory
 
   -h, --help
           Print help (see a summary with '-h')
 
   -V, --version
           Print version
+
 ```
 
 ## Development and test
