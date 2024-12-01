@@ -4,7 +4,7 @@ use chrono::Local;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
 pub struct History {
@@ -59,7 +59,6 @@ impl History {
         // TODO: expand user in the filepath.
 
         let commands = preprocess_history(&filepath)?;
-        println!("{:#?}", commands);
 
         let entries = commands
             .into_iter()
@@ -83,7 +82,18 @@ impl History {
             fs::copy(&self.filename, backup_path.clone())
                 .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
         }
-        // TODO: write the entries to the file
+
+        let output_file = File::create(&self.filename)
+            .map_err(|e| errors::HistoryError::IoError(self.filename.clone(), e.to_string()))?;
+
+        let mut writer = BufWriter::new(output_file);
+
+        for entry in &self.entries {
+            let line = format!("{}\n", entry.to_history_line());
+            writer.write_all(line.as_ref()).unwrap();
+        }
+
+        writer.flush().unwrap();
         Ok(())
     }
 
@@ -117,21 +127,8 @@ impl History {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use std::io::Write;
     use std::time::Duration;
-    use tempfile::NamedTempFile;
-
-    fn get_tmp_file(commands: &str) -> NamedTempFile {
-        let mut tmpfile =
-            NamedTempFile::new().expect("The tests should be able to create a temporary file!");
-
-        let path = tmpfile.path().to_string_lossy().to_string();
-        let msg = format!("We should able to write to the temporary file '{path}'").clone();
-
-        tmpfile.write_all(commands.as_bytes()).expect(&msg);
-
-        tmpfile
-    }
+    use test_helpers::get_tmp_file;
 
     #[test]
     fn test_empty_history() {
@@ -172,22 +169,21 @@ line'"#,
         let history = History::from_file(&tmp_hist_file).unwrap();
 
         assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
-        
+
         // First command
         assert_eq!(
             history.entries[0].command(),
             r#"echo 'hello hacha \
 world'"#
         );
-        
-        
+
         // Second command
         assert_eq!(
             history.entries[1].command(),
             r#"echo 'multiple \
 line'"#
         );
-        
+
         // Third command
         assert_eq!(history.entries[2].command(), "reload");
     }

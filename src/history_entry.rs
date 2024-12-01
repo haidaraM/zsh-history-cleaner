@@ -175,7 +175,30 @@ world'\"#;
 
     #[test]
     fn test_to_history_line() {
-        let cmd = ": 1731317544:12;for d in VWT.*; do l $d; done";
+        let cmds = [
+            ": 1731317544:12;for d in VWT.*; do l $d; done",
+            r#": 1733005037:0;docker run -d --name mysql \\
+-v mysql:/var/lib/mysql \\
+-e MYSQL_ROOT_PASSWORD=vaalala -e MYSQL_DATABASE=vaalala -e MYSQL_USER=vaalala \\
+-e MYSQL_PASSWORD=vaalala \\
+-p 3306:3306 mysql:8
+"#,
+        ];
+
+        for cmd in cmds {
+            let entry = HistoryEntry::try_from(cmd).unwrap();
+            assert_eq!(entry.to_history_line(), cmd);
+        }
+    }
+
+    #[test]
+    fn test_to_history_line_for_multiple_lines() {
+        let cmd = r#": 1733005037:0;docker run -d --name mysql \\
+-v mysql:/var/lib/mysql \\
+-e MYSQL_ROOT_PASSWORD=vaalala -e MYSQL_DATABASE=vaalala -e MYSQL_USER=vaalala \\
+-e MYSQL_PASSWORD=vaalala \\
+-p 3306:3306 mysql:8
+"#;
         let for_loop = HistoryEntry::try_from(cmd).unwrap();
         assert_eq!(for_loop.to_history_line(), cmd.to_string());
     }
