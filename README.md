@@ -7,18 +7,23 @@ A command line tool to clean your .zsh history by:
 - Removing commands matching some patterns (TODO)
 
 > [!WARNING]  
-> **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming langage (it's my
+> **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
 > first project in Rust). As such, do not expect the project to be a full-featured solution for cleaning your history
 > file.
 
+## Installation
+
+TODO: Publish to crates.io and add installation instructions:
+
+```shell
+cargo install zsh-history-cleaner
+zhc --help
+```
+
 ## Usage
 
-By default, the duplicates command are removed from the history.
-
-**Note that multilines command with backslash are not supported yet.**
-
 ```
-Clean your history by removing duplicate commands, commands matching regex etc...
+Clean your history by removing duplicate commands, commands matching regex, etc...
 
 By default, all the duplicate commands are removed.
 
@@ -30,14 +35,14 @@ Options:
 
   -H, --history-file <HISTORY_FILE>
           The history file to use
-          
+
           [default: ~/.zsh_history]
 
   -n, --no-backup
           [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory
 
   -k, --keep-duplicates
-          Should we keep duplicate commands in the history file
+          Should we keep duplicate commands in the history file?
 
   -h, --help
           Print help (see a summary with '-h')
@@ -49,4 +54,8 @@ Options:
 
 ## Development and test
 
-TODO
+```shell
+cargo build
+cargo test
+```
+

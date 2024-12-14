@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
 
-/// Clean your history by removing duplicate commands, commands matching regex etc...
+/// Clean your history by removing duplicate commands, commands matching regex, etc...
 ///
 /// By default, all the duplicate commands are removed.
 #[derive(Parser, Debug)]
@@ -21,7 +21,7 @@ struct Cli {
     #[arg(short, long, action = ArgAction::SetFalse)]
     no_backup: bool,
 
-    /// Should we keep duplicate commands in the history file
+    /// Should we keep duplicate commands in the history file?
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
 }
@@ -40,10 +40,11 @@ fn main() -> ExitCode {
 fn run(cli: Cli) -> Result<(), String> {
     let mut history =
         history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
+    let backup_flag = cli.no_backup;
 
     if history.is_empty() {
         println!(
-            "No entries found in the history file '{}'.",
+            "No entries found in the history file '{}' Nothing to do.",
             cli.history_file
         );
         return Ok(());
@@ -56,9 +57,9 @@ fn run(cli: Cli) -> Result<(), String> {
     }
 
     if cli.dry_run {
-        println!("Dry run enabled. No changes will be made.");
+        println!("Dry run enabled. No changes will be saved.");
         return Ok(());
     }
 
-    history.write(cli.no_backup).map_err(|err| err.to_string())
+    history.write(backup_flag).map_err(|err| err.to_string())
 }

@@ -1,5 +1,5 @@
+use crate::entry::HistoryEntry;
 use crate::errors;
-use crate::history_entry::HistoryEntry;
 use chrono::Local;
 use std::collections::HashSet;
 use std::fs;
@@ -36,7 +36,7 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
             current_command.push_str(trimmed);
         } else {
             if !current_command.is_empty() {
-                // Still appending a multi line command
+                // Still appending a multi-line command
                 current_command.push('\n');
             }
             current_command.push_str(trimmed);
@@ -98,6 +98,8 @@ impl History {
     }
 
     /// Remove the duplicate commands from the history.
+    /// This function retains the first occurrence of a command and removes all subsequent duplicates.
+    // TODO: Add a flag to keep the last occurrence instead of the first.
     pub fn remove_duplicates(&mut self) {
         let before_count = self.entries.len() as f64;
         let mut seen = HashSet::new();
@@ -189,5 +191,7 @@ line'"#
     }
 
     #[test]
-    fn test_remove_duplicates() {}
+    fn test_remove_duplicates() {
+        // TODO: implement this test
+    }
 }
