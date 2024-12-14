@@ -30,7 +30,7 @@ fn run_flags(flags: Vec<&str>, expected: &str) {
 fn test_help() {
     run_flags(
         ["-h", "--help"].to_vec(),
-        "Clean your history by removing duplicate commands, commands matching regex etc...",
+        "Clean your history by removing duplicate commands, commands matching regex, etc...",
     );
 }
 

@@ -71,17 +71,23 @@ impl History {
         })
     }
 
-    /// Write the history to the filesystem and optionally take a backup
-    pub fn write(&self, backup: bool) -> Result<(), errors::HistoryError> {
-        if backup {
+    /// Write the history to the filesystem and optionally take a backup.
+    /// Returns the path to the backup file if a backup was taken.
+    /// Otherwise, returns `None`.
+    pub fn write(&self, backup: bool) -> Result<Option<String>, errors::HistoryError> {
+        let backup_path = if backup {
             let now = Local::now().format("%Y-%m-%d-%H:%M:%S%.3f").to_string();
-
             let backup_path = format!("{}.{}", self.filename, now);
 
             println!("Backing up the history to '{backup_path}'...");
-            fs::copy(&self.filename, backup_path.clone())
-                .map_err(|e| errors::HistoryError::BackUpError(backup_path, e.to_string()))?;
-        }
+            fs::copy(&self.filename, backup_path.clone()).map_err(|e| {
+                errors::HistoryError::BackUpError(backup_path.clone(), e.to_string())
+            })?;
+
+            Some(backup_path)
+        } else {
+            None
+        };
 
         let output_file = File::create(&self.filename)
             .map_err(|e| errors::HistoryError::IoError(self.filename.clone(), e.to_string()))?;
@@ -92,14 +98,14 @@ impl History {
             let line = format!("{}\n", entry.to_history_line());
             writer.write_all(line.as_ref()).unwrap();
         }
-
         writer.flush().unwrap();
-        Ok(())
+
+        Ok(backup_path)
     }
 
     /// Remove the duplicate commands from the history.
     /// This function retains the first occurrence of a command and removes all subsequent duplicates.
-    // TODO: Add a flag to keep the last occurrence instead of the first.
+    // TODO: Keep the last occurrence instead of the first.
     pub fn remove_duplicates(&mut self) {
         let before_count = self.entries.len() as f64;
         let mut seen = HashSet::new();
@@ -192,6 +198,21 @@ line'"#
 
     #[test]
     fn test_remove_duplicates() {
+        // TODO: implement this test
+    }
+
+    #[test]
+    fn test_write_with_a_backup() {
+        // TODO: implement this test
+    }
+
+    #[test]
+    fn test_write_with_no_backup() {
+        // TODO: implement this test
+    }
+
+    #[test]
+    fn test_write_with_no_change_at_all() {
         // TODO: implement this test
     }
 }

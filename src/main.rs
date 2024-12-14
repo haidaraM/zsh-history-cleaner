@@ -37,7 +37,7 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(cli: Cli) -> Result<(), String> {
+fn run(cli: Cli) -> Result<Option<String>, String> {
     let mut history =
         history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
     let backup_flag = cli.no_backup;
@@ -47,7 +47,7 @@ fn run(cli: Cli) -> Result<(), String> {
             "No entries found in the history file '{}' Nothing to do.",
             cli.history_file
         );
-        return Ok(());
+        return Ok(None);
     }
 
     println!("{} entries in '{}'", history.size(), cli.history_file);
@@ -58,7 +58,7 @@ fn run(cli: Cli) -> Result<(), String> {
 
     if cli.dry_run {
         println!("Dry run enabled. No changes will be saved.");
-        return Ok(());
+        return Ok(None);
     }
 
     history.write(backup_flag).map_err(|err| err.to_string())
