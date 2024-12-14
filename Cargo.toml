@@ -1,0 +1,31 @@
+[package]
+name = "zsh-history-cleaner"
+version = "0.1.0"
+edition = "2021"
+description = "Clean your history by removing duplicate commands, commands matching regex, etc..."
+repository = "https://github.com/haidaraM/zsh-history-cleaner"
+readme = "README.md"
+license = "MIT"
+categories = ["command-line-utilities", "filesystem"]
+authors = ["Mohamed El Mouctar HAIDARA"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+doctest = false
+
+[[bin]]
+name = "zhc"
+path = "src/main.rs"
+test = true
+
+[dependencies]
+thiserror = "2.0.7"
+regex = "1.11.1"
+clap = { version = "4.5.23", features = ["derive", "color"] }
+once_cell = "1.20.2"
+chrono = "0.4.39"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
+test_helpers = { path = "test_helpers" }
