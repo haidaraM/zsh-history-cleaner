@@ -4,7 +4,7 @@ A command line tool to clean your .zsh history by:
 
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from a specific time range (TODO)
-- Removing commands matching some patterns (TODO)
+- Removing commands matching some patterns
 
 > [!WARNING]  
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
@@ -43,6 +43,12 @@ Options:
 
   -k, --keep-duplicates
           Should we keep duplicate commands in the history file?
+
+  -f, --filter <FILTER_WORDS>
+          Words to filter out from the history. Multiple words can be specified.
+
+  -i, --ignore-case
+          Ignore case when filtering words.
 
   -h, --help
           Print help (see a summary with '-h')

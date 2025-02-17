@@ -24,6 +24,14 @@ struct Cli {
     /// Should we keep duplicate commands in the history file?
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
+
+    /// Words to filter out from the history. Multiple words can be specified.
+    #[arg(short = 'f', long = "filter", value_delimiter = ',')]
+    filter_words: Vec<String>,
+
+    /// Ignore case when filtering words.
+    #[arg(short = 'i', long = "ignore-case", action = ArgAction::SetTrue, default_value = "false")]
+    ignore_case: bool,
 }
 
 fn main() -> ExitCode {
@@ -54,6 +62,10 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
 
     if !cli.keep_duplicates {
         history.remove_duplicates();
+    }
+
+    if !cli.filter_words.is_empty() {
+        history.remove_entries_containing(&cli.filter_words, cli.ignore_case, cli.dry_run);
     }
 
     if cli.dry_run {
