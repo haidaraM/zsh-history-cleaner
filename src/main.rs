@@ -1,5 +1,5 @@
 use std::process::ExitCode;
-
+use dirs::home_dir;
 use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
 
@@ -24,6 +24,14 @@ struct Cli {
     /// Should we keep duplicate commands in the history file?
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
+
+    /// Words to filter out from the history. Multiple words can be specified.
+    #[arg(short = 'f', long = "filter", value_delimiter = ',')]
+    filter_words: Vec<String>,
+
+    /// Ignore case when filtering words.
+    #[arg(short = 'i', long = "ignore-case", action = ArgAction::SetTrue, default_value = "false")]
+    ignore_case: bool,
 }
 
 fn main() -> ExitCode {
@@ -38,22 +46,32 @@ fn main() -> ExitCode {
 }
 
 fn run(cli: Cli) -> Result<Option<String>, String> {
+    let history_file = if cli.history_file.starts_with("~") {
+        cli.history_file.replacen("~", &home_dir().unwrap().to_string_lossy(), 1)
+    } else {
+        cli.history_file.clone()
+    };
+
     let mut history =
-        history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
+        history::History::from_file(&history_file).map_err(|err| err.to_string())?;
     let backup_flag = cli.no_backup;
 
     if history.is_empty() {
         println!(
             "No entries found in the history file '{}' Nothing to do.",
-            cli.history_file
+            history_file
         );
         return Ok(None);
     }
 
-    println!("{} entries in '{}'", history.size(), cli.history_file);
+    println!("{} entries in '{}'", history.size(), history_file);
 
     if !cli.keep_duplicates {
         history.remove_duplicates();
+    }
+
+    if !cli.filter_words.is_empty() {
+        history.remove_entries_containing(&cli.filter_words, cli.ignore_case, cli.dry_run);
     }
 
     if cli.dry_run {

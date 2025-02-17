@@ -1,5 +1,6 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
+use crate::filters::Filter;
 use chrono::Local;
 use std::collections::HashSet;
 use std::fs;
@@ -119,6 +120,39 @@ impl History {
         println!(
             "{} entries after removing duplicates ({percent_of_duplicate:.0}% of duplicates).",
             self.entries.len(),
+        );
+    }
+
+    /// Remove entries containing any of the specified words.
+    /// If `dry_run` is true, it will print the entries that would be removed.
+    pub fn remove_entries_containing(&mut self, words: &[String], ignore_case: bool, dry_run: bool) {
+        let filter = Filter::new(words, ignore_case);
+        let before_count = self.entries.len();
+        let mut removed_entries = Vec::new();
+
+        self.entries.retain(|entry| {
+            if filter.matches(entry.command()) {
+                if dry_run {
+                    removed_entries.push(entry.clone());
+                }
+                false
+            } else {
+                true
+            }
+        });
+
+        if dry_run {
+            println!("Entries that would be removed:");
+            for entry in removed_entries {
+                println!("{}", entry.to_history_line());
+            }
+        }
+
+        let after_count = self.entries.len();
+        println!(
+            "{} entries removed. {} entries remaining.",
+            before_count - after_count,
+            after_count
         );
     }
 
