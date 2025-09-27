@@ -9,7 +9,13 @@ A command line tool to clean your .zsh history by:
 > [!WARNING]  
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
 > first project in Rust). As such, do not expect the project to be a full-featured solution for cleaning your history
-> file.
+> file. A backup of your history file is created by default before any modification. Use the
+`--no-backup` flag with caution.
+
+## Limitations
+
+- Only the `.zsh_history` file format is supported.
+- The history file is expected to be in UTF-8 encoding and should not contain non UTF-8 characters.
 
 ## Installation
 

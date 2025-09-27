@@ -21,15 +21,16 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
     let mut commands = Vec::new();
     let mut current_command = String::new();
 
-    let path_ref = filepath.as_ref();
-    let name = path_ref.to_string_lossy().to_string();
+    let name = filepath.as_ref().to_string_lossy().to_string();
 
     let file = File::open(filepath)
         .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
     let reader = BufReader::new(file);
 
-    for line in reader.lines() {
-        let line = line.map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+    for (counter, line) in reader.lines().enumerate() {
+        let line = line.map_err(|e| {
+            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
+        })?;
         let trimmed = line.trim_end(); // Trim trailing whitespace
         if trimmed.ends_with('\\') {
             // Remove the backslash and keep appending
@@ -136,7 +137,7 @@ mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
     use std::time::Duration;
-    use test_helpers::get_tmp_file;
+    use test_helpers::{get_tmp_file, get_tmp_file_with_invalid_utf8};
 
     #[test]
     fn test_empty_history() {
@@ -194,6 +195,36 @@ line'"#
 
         // Third command
         assert_eq!(history.entries[2].command(), "reload");
+    }
+
+    #[test]
+    fn test_non_utf_8_chars_in_the_fle() {
+        // Create a temporary file with non-UTF-8 content using test_helpers
+        let tmpfile = get_tmp_file_with_invalid_utf8();
+
+        // Try to read the history file - this should fail with LineEncodingError
+        let result = History::from_file(&tmpfile);
+
+        assert!(
+            result.is_err(),
+            "Expected an error when reading non-UTF-8 content"
+        );
+
+        if let Err(error) = result {
+            match error {
+                errors::HistoryError::LineEncodingError(line_number, error_msg) => {
+                    assert_eq!(line_number, "2", "Error should occur on line 2");
+                    assert!(
+                        error_msg.contains("stream did not contain valid UTF-8"),
+                        "Error message should mention UTF-8: {}",
+                        error_msg
+                    );
+                }
+                _other_error => {
+                    panic!("Expected LineEncodingError, but got a different error type")
+                }
+            }
+        }
     }
 
     #[test]

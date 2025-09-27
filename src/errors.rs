@@ -11,6 +11,9 @@ pub enum HistoryError {
     #[error("Error when handling the file '{0}': {1}.")]
     IoError(String, String),
 
+    #[error("Error when reading line {0}: {1}.")]
+    LineEncodingError(String, String),
+
     #[error("Error when backing up the history to '{0}': {1}.")]
     BackUpError(String, String),
 }

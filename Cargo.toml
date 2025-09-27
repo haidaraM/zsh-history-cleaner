@@ -20,11 +20,11 @@ path = "src/main.rs"
 test = true
 
 [dependencies]
-thiserror = "2.0.7"
-regex = "1.11.1"
-clap = { version = "4.5.23", features = ["derive", "color"] }
-once_cell = "1.20.2"
-chrono = "0.4.39"
+thiserror = "2.0.16"
+regex = "1.11.3"
+clap = { version = "4.5.48", features = ["derive", "color"] }
+once_cell = "1.21.3"
+chrono = "0.4.42"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
