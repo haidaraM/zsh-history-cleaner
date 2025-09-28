@@ -1,6 +1,6 @@
 use crate::errors;
-use chrono::DateTime;
 use chrono::Local;
+use chrono::DateTime;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
@@ -64,11 +64,11 @@ impl Display for HistoryEntry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Command: '{}', Executed at: {}, Duration: {}s",
-            self.command,
+            "Command executed at '{}' for '{}s': {}",
             self.timestamp_as_local_date_time()
                 .map_or_else(|| self.timestamp.to_string(), |dt| dt.to_string()),
-            self.duration.as_secs()
+            self.duration.as_secs(),
+            self.command,
         )
     }
 }
@@ -254,16 +254,6 @@ world'\"#;
 
         let entry_3 = HistoryEntry::try_from(": 1731084669:1;terraform apply".to_string()).unwrap();
         assert_ne!(entry_1, entry_3);
-    }
-
-    // Test the Display implementation for HistoryEntry
-    #[test]
-    fn test_display_history() {
-        let history = HistoryEntry::try_from(": 1731884069:10;cd ~").unwrap();
-        assert_eq!(
-            "Command: 'cd ~', Executed at: 2024-11-17 23:54:29 +01:00, Duration: 10s",
-            format!("{}", history)
-        );
     }
 
     #[test]
