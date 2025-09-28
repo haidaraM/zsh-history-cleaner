@@ -1,4 +1,6 @@
 use crate::errors;
+use chrono::DateTime;
+use chrono::Local;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
@@ -43,6 +45,11 @@ impl HistoryEntry {
         &self.timestamp
     }
 
+    /// Converts the UNIX timestamp to a `DateTime<Local>`, returning None for invalid timestamps.
+    pub fn timestamp_as_local_date_time(&self) -> Option<DateTime<Local>> {
+        DateTime::from_timestamp(self.timestamp as i64, 0).map(|dt| dt.with_timezone(&Local))
+    }
+
     pub fn command(&self) -> &str {
         &self.command
     }
@@ -59,7 +66,8 @@ impl Display for HistoryEntry {
             f,
             "Command: '{}', Executed at: {}, Duration: {}s",
             self.command,
-            self.timestamp,
+            self.timestamp_as_local_date_time()
+                .map_or_else(|| self.timestamp.to_string(), |dt| dt.to_string()),
             self.duration.as_secs()
         )
     }
@@ -253,8 +261,29 @@ world'\"#;
     fn test_display_history() {
         let history = HistoryEntry::try_from(": 1731884069:10;cd ~").unwrap();
         assert_eq!(
-            "Command: 'cd ~', Executed at: 1731884069, Duration: 10s",
+            "Command: 'cd ~', Executed at: 2024-11-17 23:54:29 +01:00, Duration: 10s",
             format!("{}", history)
         );
+    }
+
+    #[test]
+    fn test_timestamp_as_local_date_time() {
+        let entry = HistoryEntry::try_from(": 1759099958:0;ls").unwrap();
+        assert_eq!(
+            entry.timestamp_as_local_date_time().unwrap().timestamp() as u64,
+            1759099958
+        );
+
+        assert_eq!(
+            entry.timestamp,
+            entry.timestamp_as_local_date_time().unwrap().timestamp() as u64
+        );
+    }
+
+    #[test]
+    fn test_timestamp_as_local_date_time_edge_cases() {
+        // Test timestamp 0 (Unix epoch)
+        let entry_zero = HistoryEntry::try_from(": 0000000000:0;ls").unwrap();
+        assert!(entry_zero.timestamp_as_local_date_time().is_some());
     }
 }

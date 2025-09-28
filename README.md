@@ -3,7 +3,7 @@
 A command line tool to clean your .zsh history by:
 
 - Removing duplicate commands: the first command is kept among the duplicates.
-- Removing commands from a specific time range (TODO)
+- Removing commands from specific time ranges.
 - Removing commands matching some patterns (TODO)
 
 > [!WARNING]  
