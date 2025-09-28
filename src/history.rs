@@ -1,7 +1,7 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
 use chrono::Local;
-use std::collections::HashSet;
+use std::collections::{HashMap};
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -105,18 +105,28 @@ impl History {
     }
 
     /// Remove the duplicate commands from the history.
-    /// This function retains the first occurrence of a command and removes all subsequent duplicates.
-    // TODO: Keep the last occurrence instead of the first.
+    /// This function retains the last occurrence of a command when duplicates are found.
     pub fn remove_duplicates(&mut self) {
         let before_count = self.entries.len() as f64;
-        let mut seen = HashSet::new();
+        let mut command_to_last_index: HashMap<&str, usize> = HashMap::new();
 
-        self.entries
-            .retain(|entry| seen.insert(entry.command().to_string()));
+        // Single pass to find last occurrence of each command
+        for (index, entry) in self.entries.iter().enumerate() {
+            command_to_last_index.insert(entry.command(), index);
+        }
+
+        // Create new vector with only the entries at their last occurrence
+        let mut new_entries = Vec::with_capacity(command_to_last_index.len());
+        for (index, entry) in self.entries.iter().enumerate() {
+            if command_to_last_index[entry.command()] == index {
+                new_entries.push(entry.clone());
+            }
+        }
+
+        self.entries = new_entries;
 
         let percent_of_duplicate =
             (before_count - self.entries.len() as f64) / before_count * 100.0;
-
         println!(
             "{} entries after removing duplicates ({percent_of_duplicate:.0}% of duplicates).",
             self.entries.len(),
@@ -245,9 +255,8 @@ line'"#
         assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
         assert_eq!(history.entries[0].command(), "tf fmt -recursive");
 
-        // We currently keep the first occurrence of a duplicate command. This may change in the future to keep the last occurrence instead.
         assert_eq!(history.entries[1].command(), "tf apply");
-        assert_eq!(*history.entries[1].timestamp(), 1732577037);
+        assert_eq!(*history.entries[1].timestamp(), 1732577157);
 
         assert_eq!(history.entries[2].command(), "echo 'hello world'");
     }
