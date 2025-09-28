@@ -227,19 +227,104 @@ line'"#
         }
     }
 
+    // Remove duplicate commands from the history
     #[test]
     fn test_remove_duplicates() {
-        // TODO: implement this test
+        let cmds = [
+            ": 1732577005:0;tf fmt -recursive",
+            ": 1732577037:0;tf apply",
+            ": 1732577157:0;tf apply",
+            ": 1732577197:0;echo 'hello world'",
+        ];
+
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let mut history = History::from_file(&tmp_hist_file).unwrap();
+
+        assert_eq!(history.entries.len(), 4);
+        history.remove_duplicates();
+        assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
+        assert_eq!(history.entries[0].command(), "tf fmt -recursive");
+
+        // We currently keep the first occurrence of a duplicate command. This may change in the future to keep the last occurrence instead.
+        assert_eq!(history.entries[1].command(), "tf apply");
+        assert_eq!(*history.entries[1].timestamp(), 1732577037);
+
+        assert_eq!(history.entries[2].command(), "echo 'hello world'");
     }
 
+    // Write the history to a file with a backup
     #[test]
     fn test_write_with_a_backup() {
-        // TODO: implement this test
+        // Create a history with some entries
+        let cmds = [
+            ": 1732577005:0;tf fmt -recursive",
+            ": 1732577037:0;tf apply",
+            ": 1732577157:0;echo 'hello world'",
+        ];
+
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+
+        // Write with backup enabled
+        let backup_path = history
+            .write(true)
+            .expect("Could not write history to temporary backup");
+
+        let backup_path = backup_path.expect("Expected Some backup path, got None");
+
+        // Backup file should exist
+        assert!(Path::new(&backup_path).exists(), "Backup file should exist");
+
+        // Backup file should contain the original content
+        let backup_content = fs::read_to_string(&backup_path).expect("Failed to read backup file");
+        let expected_content = format!("{}\n", cmds.join("\n"));
+        assert_eq!(
+            backup_content, expected_content,
+            "Backup file content mismatch"
+        );
+
+        // Original file should still exist and contain the history entries
+        let original_content =
+            fs::read_to_string(tmp_hist_file.path()).expect("Failed to read original file");
+        assert_eq!(
+            original_content, expected_content,
+            "Original file content mismatch"
+        );
+
+        // Clean up the backup file
+        fs::remove_file(&backup_path).unwrap();
     }
 
+    // Write the history to a file without a backup
     #[test]
     fn test_write_with_no_backup() {
-        // TODO: implement this test
+        // Create a history with some entries
+        let cmds = [
+            ": 1732577005:0;tf fmt -recursive",
+            ": 1732577037:0;tf apply",
+            ": 1732577157:0;echo 'hello world'",
+        ];
+
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+
+        // Write with backup disabled
+        let backup_path = history
+            .write(false)
+            .expect("Could not write history to temporary backup");
+        assert_eq!(backup_path, None, "Expected no backup path");
+
+        // Original file should still exist and contain the history entries
+        let expected_content = format!("{}\n", cmds.join("\n"));
+        let original_content =
+            fs::read_to_string(tmp_hist_file.path()).expect("Failed to read original file");
+        assert_eq!(
+            original_content, expected_content,
+            "Original file content mismatch"
+        );
+
+        // No backup file should have been created - we can't easily test this without knowing
+        // the exact timestamp format, but we've verified that backup_path is None
     }
 
     #[test]

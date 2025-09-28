@@ -112,6 +112,7 @@ mod tests {
     use super::*;
     use pretty_assertions::{assert_eq, assert_ne};
 
+    // Test with simple commands without special characters or multiple lines
     #[test]
     fn test_parsing_simple_history_entry() {
         let sleep = HistoryEntry::try_from(": 1731884069:0;sleep 2".to_string()).unwrap();
@@ -127,6 +128,7 @@ mod tests {
         assert_eq!(cargo_build.duration, Duration::from_secs(10));
     }
 
+    // Test with a command that includes a backslash for line continuation
     #[test]
     fn test_two_lines_command() {
         let cmd = r#": 1731622185:9;brew update\
@@ -140,6 +142,7 @@ brew install opentofu"#;
         assert_eq!(entry.command, expected_cmd);
     }
 
+    // Test with a command that spans multiple lines using backslashes
     #[test]
     fn test_multiple_lines_command() {
         let cmd = r#": 1733005037:0;docker run -d --name mysql \\
@@ -160,6 +163,7 @@ brew install opentofu"#;
         assert_eq!(entry.command, expected_cmd);
     }
 
+    // Test with a command that includes a backslash at the end of the line
     #[test]
     fn test_multiline_command_back_slash_at_the_end() {
         let cmd = r#": 1732663091:0;echo 'hello hacha\
@@ -173,6 +177,7 @@ world'\"#;
         assert_eq!(entry.command, expected_cmd);
     }
 
+    // Test the conversion of HistoryEntry back to the original history line format
     #[test]
     fn test_to_history_line() {
         let cmds = [
@@ -191,6 +196,7 @@ world'\"#;
         }
     }
 
+    // Specifically test the conversion for a multi-line command
     #[test]
     fn test_to_history_line_for_multiple_lines() {
         let cmd = r#": 1733005037:0;docker run -d --name mysql \\
@@ -203,6 +209,7 @@ world'\"#;
         assert_eq!(for_loop.to_history_line(), cmd.to_string());
     }
 
+    // Test with a more complex command that includes special characters and multiple statements
     #[test]
     fn test_parsing_complex_history_entry() {
         let complex =
@@ -213,6 +220,7 @@ world'\"#;
         assert_eq!(complex.duration, Duration::from_secs(12));
     }
 
+    // Test with an invalid history entry that does not match the expected format
     #[test]
     fn test_parsing_history_entry_no_matching() {
         let entry = HistoryEntry::try_from(": 1731884069;");
@@ -222,12 +230,14 @@ world'\"#;
         ));
     }
 
+    // Test with an invalid history entry that has a negative duration
     #[test]
     fn test_parsing_history_entry_from_invalid_duration() {
         let entry = HistoryEntry::try_from(": 1731884069:-10;sleep 2");
         assert!(entry.is_err());
     }
 
+    // Test the equality and inequality of HistoryEntry instances based on the command field
     #[test]
     fn test_entry_equality() {
         let entry_1 = HistoryEntry::try_from(": 1731884069:0;ls".to_string()).unwrap();
@@ -238,6 +248,7 @@ world'\"#;
         assert_ne!(entry_1, entry_3);
     }
 
+    // Test the Display implementation for HistoryEntry
     #[test]
     fn test_display_history() {
         let history = HistoryEntry::try_from(": 1731884069:10;cd ~").unwrap();
