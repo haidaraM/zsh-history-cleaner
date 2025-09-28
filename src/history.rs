@@ -1,12 +1,12 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
 use chrono::Local;
-use std::collections::{HashMap};
+use expand_tilde::expand_tilde;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
-use expand_tilde::expand_tilde;
 
 pub struct History {
     /// The filename where the history was read
@@ -58,8 +58,8 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: &P) -> Result<Self, errors::HistoryError> {
-
-        let expanded_path = expand_tilde(filepath).expect("Failed to expand tilde in the file path");
+        let expanded_path =
+            expand_tilde(filepath).expect("Failed to expand tilde in the file path");
 
         let commands = preprocess_history(&expanded_path)?;
 
@@ -142,7 +142,7 @@ impl History {
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
-    
+
     pub fn filename(&self) -> &str {
         &self.filename
     }
