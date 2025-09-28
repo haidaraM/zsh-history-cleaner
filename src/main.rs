@@ -45,15 +45,22 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     if history.is_empty() {
         println!(
             "No entries found in the history file '{}' Nothing to do.",
-            cli.history_file
+            history.filename()
         );
         return Ok(None);
     }
 
-    println!("{} entries in '{}'", history.size(), cli.history_file);
+    let initial_size = history.size();
+
+    println!("{} entries in '{}'", history.size(), history.filename());
 
     if !cli.keep_duplicates {
         history.remove_duplicates();
+    }
+
+    if history.size() == initial_size {
+        println!("No changes made to the history file.");
+        return Ok(None);
     }
 
     if cli.dry_run {

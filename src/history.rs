@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
+use expand_tilde::expand_tilde;
 
 pub struct History {
     /// The filename where the history was read
@@ -57,9 +58,10 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: &P) -> Result<Self, errors::HistoryError> {
-        // TODO: expand user in the filepath.
 
-        let commands = preprocess_history(&filepath)?;
+        let expanded_path = expand_tilde(filepath).expect("Failed to expand tilde in the file path");
+
+        let commands = preprocess_history(&expanded_path)?;
 
         let entries = commands
             .into_iter()
@@ -67,7 +69,7 @@ impl History {
             .collect::<Vec<HistoryEntry>>();
 
         Ok(History {
-            filename: filepath.as_ref().to_string_lossy().to_string(),
+            filename: expanded_path.to_str().unwrap().to_string(),
             entries,
         })
     }
@@ -77,10 +79,10 @@ impl History {
     /// Otherwise, returns `None`.
     pub fn write(&self, backup: bool) -> Result<Option<String>, errors::HistoryError> {
         let backup_path = if backup {
-            let now = Local::now().format("%Y-%m-%d-%H:%M:%S%.3f").to_string();
+            let now = Local::now().format("%Y-%m-%d-%Hh%Mm%Ss%3fms").to_string();
             let backup_path = format!("{}.{}", self.filename, now);
 
-            println!("Backing up the history to '{backup_path}'...");
+            println!("Backing up the history to '{backup_path}'");
             fs::copy(&self.filename, backup_path.clone()).map_err(|e| {
                 errors::HistoryError::BackUpError(backup_path.clone(), e.to_string())
             })?;
@@ -139,6 +141,10 @@ impl History {
 
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
+    }
+    
+    pub fn filename(&self) -> &str {
+        &self.filename
     }
 }
 
