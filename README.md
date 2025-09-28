@@ -19,8 +19,6 @@ A command line tool to clean your .zsh history by:
 
 ## Installation
 
-TODO: Publish to crates.io and add installation instructions:
-
 ```shell
 cargo install zsh-history-cleaner
 zhc --help
