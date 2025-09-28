@@ -1,7 +1,7 @@
 [package]
 name = "zsh-history-cleaner"
-version = "0.1.0"
-edition = "2021"
+version = "0.2.0-unreleased"
+edition = "2024"
 description = "Clean your history by removing duplicate commands, commands matching regex, etc..."
 repository = "https://github.com/haidaraM/zsh-history-cleaner"
 readme = "README.md"
