@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
 
-/// Clean your history by removing duplicate commands, commands matching regex, etc...
+/// Clean your commands history by removing duplicate commands, commands between dates, etc...
 ///
 /// By default, all the duplicate commands are removed.
 #[derive(Parser, Debug)]
@@ -24,20 +24,37 @@ struct Cli {
     /// Should we keep duplicate commands in the history file?
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
+
+    /// Remove commands between two dates (YYYY-MM-DD YYYY-MM-DD)
+    #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
+    remove_between: Option<Vec<String>>,
 }
 
-fn main() -> ExitCode {
-    let cli = Cli::parse();
-
-    if let Err(err) = run(cli) {
-        eprintln!("{}", err);
-        ExitCode::FAILURE
-    } else {
-        ExitCode::SUCCESS
+/// Validate that the date string is in the format YYYY-MM-DD
+fn validate_date(date_str: &str) -> Result<String, String> {
+    if chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_err() {
+        return Err(format!(
+            "Invalid date format for '{}'. Expected format: YYYY-MM-DD",
+            date_str
+        ));
     }
+    Ok(date_str.to_string())
 }
 
 fn run(cli: Cli) -> Result<Option<String>, String> {
+    // TODO: Check if we can move this in the CLI parser instead
+    if let Some(dates) = cli.remove_between {
+        let start_date = &dates[0];
+        let end_date = &dates[1];
+
+        if start_date > end_date {
+            return Err(format!(
+                "Start date '{}' is after end date '{}'. Please provide valid dates.",
+                start_date, end_date
+            ));
+        }
+    }
+
     let mut history =
         history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
     let backup_flag = cli.no_backup;
@@ -64,9 +81,20 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.dry_run {
-        println!("Dry run enabled. No changes will be saved.");
+        println!("Dry run enabled: No changes were saved.");
         return Ok(None);
     }
 
     history.write(backup_flag).map_err(|err| err.to_string())
+}
+
+fn main() -> ExitCode {
+    let cli = Cli::parse();
+
+    if let Err(err) = run(cli) {
+        eprintln!("{}", err);
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }

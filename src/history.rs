@@ -130,7 +130,7 @@ impl History {
         let percent_of_duplicate =
             (before_count - self.entries.len() as f64) / before_count * 100.0;
         println!(
-            "{} entries after removing duplicates ({percent_of_duplicate:.0}% of duplicates).",
+            "{} entries after removing duplicates ({percent_of_duplicate:.2}% of duplicates).",
             self.entries.len(),
         );
     }

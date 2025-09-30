@@ -27,7 +27,7 @@ zhc --help
 ## Usage
 
 ```
-Clean your history by removing duplicate commands, commands matching regex, etc...
+Clean your history by removing duplicate commands, command
 
 By default, all the duplicate commands are removed.
 

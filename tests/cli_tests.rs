@@ -22,7 +22,7 @@ fn run_flags(flags: Vec<&str>, expected: &str) {
         let stdout =
             String::from_utf8(output.stdout).expect("the --help output string should be utf8");
 
-        assert!(stdout.contains(expected));
+        assert!(stdout.contains(expected), "Expected to find '{}' in the output of the command '{}', but got: '{}'", expected, flag, stdout);
     }
 }
 
@@ -30,7 +30,7 @@ fn run_flags(flags: Vec<&str>, expected: &str) {
 fn test_help() {
     run_flags(
         ["-h", "--help"].to_vec(),
-        "Clean your history by removing duplicate commands, commands matching regex, etc...",
+        "Clean your commands history by removing duplicate commands, commands between dates, etc...",
     );
 }
 
