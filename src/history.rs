@@ -152,6 +152,7 @@ impl History {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use std::thread::sleep;
     use std::time::Duration;
     use test_helpers::{get_tmp_file, get_tmp_file_with_invalid_utf8};
 
@@ -281,6 +282,10 @@ line'"#
         let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
+        // The precision of SystemTime can depend on the underlying OS-specific time format.
+        // So we add a few milliseconds of sleep to ensure the modified time is different.
+        sleep(Duration::from_millis(500));
+
         // Write with backup enabled
         let backup_path = history
             .write(true)
@@ -311,7 +316,9 @@ line'"#
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
             hist_file_modified_after > hist_file_modified_before,
-            "History file should have been modified"
+            "History file should have been modified. Before: {:?}, After: {:?}",
+            hist_file_modified_before,
+            hist_file_modified_after
         );
 
         // Clean up the backup file
@@ -332,6 +339,10 @@ line'"#
         let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
+        // The precision of SystemTime can depend on the underlying OS-specific time format.
+        // So we add a few milliseconds of sleep to ensure the modified time is different.
+        sleep(Duration::from_millis(500));
+
         // Write with backup disabled
         let backup_path = history
             .write(false)
@@ -351,7 +362,9 @@ line'"#
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
             hist_file_modified_after > hist_file_modified_before,
-            "History file should have been modified"
+            "History file should have been modified. Before: {:?}, After: {:?}",
+            hist_file_modified_before,
+            hist_file_modified_after
         );
 
         // No backup file should have been created - we can't easily test this without knowing
