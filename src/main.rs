@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use chrono::NaiveDate;
 use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
 
@@ -25,39 +26,42 @@ struct Cli {
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
 
-    /// Remove commands between two dates (YYYY-MM-DD YYYY-MM-DD)
+    /// Remove commands between two dates (YYYY-MM-DD YYYY-MM-DD). The start date must be before or equal to the end date.
+    /// Example: --remove-between 2023-01-01 2023-06-30
     #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
-    remove_between: Option<Vec<String>>,
+    remove_between: Option<Vec<NaiveDate>>,
+}
+
+impl Cli {
+    /// Validates that the date range is valid (start <= end)
+    /// Call this after parsing to ensure business logic constraints
+    fn validate(&self) -> Result<(), String> {
+        if let Some(dates) = &self.remove_between
+            && dates[0] > dates[1] {
+                return Err(format!(
+                    "Start date '{}' is after end date '{}'. Please provide valid dates.",
+                    dates[0], dates[1]
+                ));
+            }
+        Ok(())
+    }
 }
 
 /// Validate that the date string is in the format YYYY-MM-DD
-fn validate_date(date_str: &str) -> Result<String, String> {
-    if chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_err() {
-        return Err(format!(
+fn validate_date(date_str: &str) -> Result<NaiveDate, String> {
+    NaiveDate::parse_from_str(date_str, "%Y-%m-%d").map_err(|_| {
+        format!(
             "Invalid date format for '{}'. Expected format: YYYY-MM-DD",
             date_str
-        ));
-    }
-    Ok(date_str.to_string())
+        )
+    })
 }
 
 fn run(cli: Cli) -> Result<Option<String>, String> {
-    // TODO: Check if we can move this in the CLI parser instead
-    if let Some(dates) = cli.remove_between {
-        let start_date = &dates[0];
-        let end_date = &dates[1];
-
-        if start_date > end_date {
-            return Err(format!(
-                "Start date '{}' is after end date '{}'. Please provide valid dates.",
-                start_date, end_date
-            ));
-        }
-    }
-
     let mut history =
         history::History::from_file(&cli.history_file).map_err(|err| err.to_string())?;
-    let backup_flag = cli.no_backup;
+
+    let should_backup = !cli.no_backup;
 
     if history.is_empty() {
         println!(
@@ -75,6 +79,13 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         history.remove_duplicates();
     }
 
+    println!("{:?}", cli.remove_between);
+
+    // TODO: Implement date filtering when you have the dates
+    // if let Some(dates) = cli.remove_between {
+    //     history.remove_between(&dates[0], &dates[1]);
+    // }
+
     if history.size() == initial_size {
         println!("No changes made to the history file.");
         return Ok(None);
@@ -85,14 +96,20 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    history.write(backup_flag).map_err(|err| err.to_string())
+    history.write(should_backup).map_err(|err| err.to_string())
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
+    // Validate "business logic constraints" after parsing
+    if let Err(err) = cli.validate() {
+        eprintln!("Error: {}", err);
+        return ExitCode::FAILURE;
+    }
+
     if let Err(err) = run(cli) {
-        eprintln!("{}", err);
+        eprintln!("Error: {}", err);
         ExitCode::FAILURE
     } else {
         ExitCode::SUCCESS
