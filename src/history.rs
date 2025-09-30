@@ -278,6 +278,7 @@ line'"#
         ];
 
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
         // Write with backup enabled
@@ -306,6 +307,13 @@ line'"#
             "Original file content mismatch"
         );
 
+        // Check if the has been modified
+        let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
+        assert!(
+            hist_file_modified_after > hist_file_modified_before,
+            "History file should have been modified"
+        );
+
         // Clean up the backup file
         fs::remove_file(&backup_path).unwrap();
     }
@@ -321,6 +329,7 @@ line'"#
         ];
 
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
         // Write with backup disabled
@@ -336,6 +345,13 @@ line'"#
         assert_eq!(
             original_content, expected_content,
             "Original file content mismatch"
+        );
+
+        // Check if the has been modified
+        let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
+        assert!(
+            hist_file_modified_after > hist_file_modified_before,
+            "History file should have been modified"
         );
 
         // No backup file should have been created - we can't easily test this without knowing
