@@ -152,6 +152,7 @@ impl History {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use std::thread::sleep;
     use std::time::Duration;
     use test_helpers::{get_tmp_file, get_tmp_file_with_invalid_utf8};
 
@@ -310,7 +311,7 @@ line'"#
         // Check if the has been modified
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
-            hist_file_modified_after < hist_file_modified_before,
+            hist_file_modified_after > hist_file_modified_before,
             "History file should have been modified. Before: {:?}, After: {:?}",
             hist_file_modified_before,
             hist_file_modified_after
@@ -350,9 +351,11 @@ line'"#
         );
 
         // Check if the has been modified
+        // The precision of SystemTime can depend on the underlying OS-specific time format. So we add a few milliseconds of sleep to ensure the modified time is different.
+        sleep(Duration::from_millis(400));
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
-            hist_file_modified_after < hist_file_modified_before,
+            hist_file_modified_after > hist_file_modified_before,
             "History file should have been modified. Before: {:?}, After: {:?}",
             hist_file_modified_before,
             hist_file_modified_after
