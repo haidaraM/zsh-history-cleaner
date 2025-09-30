@@ -352,7 +352,7 @@ line'"#
 
         // Check if the has been modified
         // The precision of SystemTime can depend on the underlying OS-specific time format. So we add a few milliseconds of sleep to ensure the modified time is different.
-        sleep(Duration::from_millis(400));
+        sleep(Duration::from_secs(1));
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
             hist_file_modified_after > hist_file_modified_before,
