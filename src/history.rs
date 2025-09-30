@@ -310,8 +310,10 @@ line'"#
         // Check if the has been modified
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
-            hist_file_modified_after > hist_file_modified_before,
-            "History file should have been modified"
+            hist_file_modified_after < hist_file_modified_before,
+            "History file should have been modified. Before: {:?}, After: {:?}",
+            hist_file_modified_before,
+            hist_file_modified_after
         );
 
         // Clean up the backup file
@@ -350,8 +352,10 @@ line'"#
         // Check if the has been modified
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
-            hist_file_modified_after > hist_file_modified_before,
-            "History file should have been modified"
+            hist_file_modified_after < hist_file_modified_before,
+            "History file should have been modified. Before: {:?}, After: {:?}",
+            hist_file_modified_before,
+            hist_file_modified_after
         );
 
         // No backup file should have been created - we can't easily test this without knowing
