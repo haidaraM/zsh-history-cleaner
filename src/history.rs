@@ -284,7 +284,7 @@ line'"#
 
         // The precision of SystemTime can depend on the underlying OS-specific time format.
         // So we add a few milliseconds of sleep to ensure the modified time is different.
-        sleep(Duration::from_secs(500));
+        sleep(Duration::from_millis(500));
 
         // Write with backup enabled
         let backup_path = history
@@ -341,7 +341,7 @@ line'"#
 
         // The precision of SystemTime can depend on the underlying OS-specific time format.
         // So we add a few milliseconds of sleep to ensure the modified time is different.
-        sleep(Duration::from_secs(500));
+        sleep(Duration::from_millis(500));
 
         // Write with backup disabled
         let backup_path = history
