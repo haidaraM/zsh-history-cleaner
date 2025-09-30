@@ -282,6 +282,10 @@ line'"#
         let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
+        // The precision of SystemTime can depend on the underlying OS-specific time format.
+        // So we add a few milliseconds of sleep to ensure the modified time is different.
+        sleep(Duration::from_secs(1));
+
         // Write with backup enabled
         let backup_path = history
             .write(true)
@@ -335,6 +339,10 @@ line'"#
         let hist_file_modified_before = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         let history = History::from_file(&tmp_hist_file).unwrap();
 
+        // The precision of SystemTime can depend on the underlying OS-specific time format.
+        // So we add a few milliseconds of sleep to ensure the modified time is different.
+        sleep(Duration::from_secs(1));
+
         // Write with backup disabled
         let backup_path = history
             .write(false)
@@ -351,8 +359,6 @@ line'"#
         );
 
         // Check if the has been modified
-        // The precision of SystemTime can depend on the underlying OS-specific time format. So we add a few milliseconds of sleep to ensure the modified time is different.
-        sleep(Duration::from_secs(1));
         let hist_file_modified_after = fs::metadata(&tmp_hist_file).unwrap().modified().unwrap();
         assert!(
             hist_file_modified_after > hist_file_modified_before,
