@@ -133,6 +133,7 @@ impl History {
         removed_count
     }
 
+    /// Remove commands between two dates (inclusive).
     pub fn remove_between_dates(&mut self, start: &NaiveDate, end: &NaiveDate) -> usize {
         let before_count = self.entries.len();
 
