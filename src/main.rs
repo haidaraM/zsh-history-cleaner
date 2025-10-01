@@ -37,12 +37,13 @@ impl Cli {
     /// Call this after parsing to ensure business logic constraints
     fn validate(&self) -> Result<(), String> {
         if let Some(dates) = &self.remove_between
-            && dates[0] > dates[1] {
-                return Err(format!(
-                    "Start date '{}' is after end date '{}'. Please provide valid dates.",
-                    dates[0], dates[1]
-                ));
-            }
+            && dates[0] > dates[1]
+        {
+            return Err(format!(
+                "Start date '{}' is after end date '{}'. Please provide valid dates.",
+                dates[0], dates[1]
+            ));
+        }
         Ok(())
     }
 }
@@ -71,6 +72,10 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         return Ok(None);
     }
 
+    if cli.dry_run {
+        println!("=== Dry run mode enabled. No changes will be made to the history file. ===");
+    }
+
     let initial_size = history.size();
 
     println!("{} entries in '{}'", history.size(), history.filename());
@@ -78,8 +83,6 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     if !cli.keep_duplicates {
         history.remove_duplicates();
     }
-
-    println!("{:?}", cli.remove_between);
 
     // TODO: Implement date filtering when you have the dates
     // if let Some(dates) = cli.remove_between {
@@ -91,12 +94,11 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    if cli.dry_run {
-        println!("Dry run enabled: No changes were saved.");
-        return Ok(None);
+    if !cli.dry_run {
+        history.write(should_backup).map_err(|err| err.to_string())
+    } else {
+        Ok(None)
     }
-
-    history.write(should_backup).map_err(|err| err.to_string())
 }
 
 fn main() -> ExitCode {
