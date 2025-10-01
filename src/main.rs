@@ -73,7 +73,15 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.dry_run {
-        println!("=== Dry run mode enabled. No changes will be made to the history file. ===");
+        println!(
+            "===================================================================================="
+        );
+        println!(
+            "============ Dry run mode enabled. No changes will be made to the history file. ===="
+        );
+        println!(
+            "===================================================================================="
+        );
     }
 
     let initial_size = history.size();
@@ -84,10 +92,9 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         history.remove_duplicates();
     }
 
-    // TODO: Implement date filtering when you have the dates
-    // if let Some(dates) = cli.remove_between {
-    //     history.remove_between(&dates[0], &dates[1]);
-    // }
+    if let Some(dates) = cli.remove_between {
+        history.remove_between_dates(&dates[0], &dates[1]);
+    }
 
     if history.size() == initial_size {
         println!("No changes made to the history file.");

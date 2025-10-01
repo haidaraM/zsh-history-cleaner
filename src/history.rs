@@ -1,6 +1,6 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use chrono::Local;
+use chrono::{Local, NaiveDate};
 use expand_tilde::expand_tilde;
 use std::collections::HashMap;
 use std::fs;
@@ -109,7 +109,7 @@ impl History {
     /// Remove the duplicate commands from the history.
     /// This function retains the last occurrence of a command when duplicates are found.
     pub fn remove_duplicates(&mut self) {
-        let before_count = self.entries.len() as f64;
+        let before_count = self.entries.len();
         let mut command_to_last_index: HashMap<&str, usize> = HashMap::new();
 
         // Single pass to find last occurrence of each command
@@ -127,12 +127,33 @@ impl History {
 
         self.entries = new_entries;
 
-        let percent_of_duplicate =
-            (before_count - self.entries.len() as f64) / before_count * 100.0;
+        let removed_count = before_count - self.entries.len();
+        println!("{} duplicate commands removed.", removed_count);
+    }
+
+    pub fn remove_between_dates(&mut self, start: &NaiveDate, end: &NaiveDate) -> usize {
+        let before_count = self.entries.len();
+
+        self.entries.retain(|entry| {
+            entry
+                .timestamp_as_date_time()
+                .map(|dt| {
+                    let date = dt.date_naive();
+                    !(date >= *start && date <= *end)
+                })
+                .unwrap_or(true) // Keep entries with invalid timestamps
+        });
+
+        let removed_count = before_count - self.entries.len();
+
         println!(
-            "{} entries after removing duplicates ({percent_of_duplicate:.2}% of duplicates).",
-            self.entries.len(),
+            "{} commands removed between {} and {}.",
+            removed_count,
+            start.format("%Y-%m-%d"),
+            end.format("%Y-%m-%d"),
         );
+
+        removed_count
     }
 
     pub fn size(&self) -> usize {
@@ -151,6 +172,7 @@ impl History {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::TimeZone;
     use pretty_assertions::assert_eq;
     use std::thread::sleep;
     use std::time::Duration;
@@ -371,8 +393,71 @@ line'"#
         // the exact timestamp format, but we've verified that backup_path is None
     }
 
+    // Remove commands between two dates
     #[test]
-    fn test_write_with_no_change_at_all() {
-        // TODO: implement this test
+    fn test_remove_between_dates() {
+        let cmds = [
+            format!(
+                ": {}:0;echo 'first command'",
+                Local
+                    .with_ymd_and_hms(2020, 1, 1, 12, 0, 0)
+                    .unwrap()
+                    .timestamp()
+            ),
+            format!(
+                ": {}:0;echo 'second command'",
+                Local
+                    .with_ymd_and_hms(2024, 2, 1, 12, 0, 0)
+                    .unwrap()
+                    .timestamp()
+            ),
+            format!(
+                ": {}:0;echo 'third command'",
+                Local
+                    .with_ymd_and_hms(2025, 3, 3, 12, 0, 0)
+                    .unwrap()
+                    .timestamp()
+            ),
+            format!(
+                ": {}:0;echo 'fourth command'",
+                Local
+                    .with_ymd_and_hms(2026, 4, 3, 12, 0, 0)
+                    .unwrap()
+                    .timestamp()
+            ),
+            format!(
+                ": {}:0;echo 'fifth command'",
+                Local
+                    .with_ymd_and_hms(2027, 4, 3, 12, 0, 0)
+                    .unwrap()
+                    .timestamp()
+            ),
+        ];
+
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let mut history = History::from_file(&tmp_hist_file).unwrap();
+
+        let remove_count = history.remove_between_dates(
+            &NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            &NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
+        );
+
+        assert_eq!(remove_count, 2, "We should have removed 2 entries");
+
+        assert_eq!(
+            history.entries.len(),
+            3,
+            "We should have 2 entries left after removal"
+        );
+        assert_eq!(history.entries[0].command(), "echo 'first command'");
+        assert_eq!(history.entries[1].command(), "echo 'fourth command'");
+
+        // Remove with a date range that matches no entries
+        let removed_count = history.remove_between_dates(
+            &NaiveDate::from_ymd_opt(2030, 1, 1).unwrap(),
+            &NaiveDate::from_ymd_opt(2030, 12, 31).unwrap(),
+        );
+        assert_eq!(removed_count, 0, "No entries should have been removed");
+        assert_eq!(history.entries.len(), 3, "We should still have 3 entries");
     }
 }
