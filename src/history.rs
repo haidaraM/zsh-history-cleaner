@@ -108,7 +108,7 @@ impl History {
 
     /// Remove the duplicate commands from the history.
     /// This function retains the last occurrence of a command when duplicates are found.
-    pub fn remove_duplicates(&mut self) {
+    pub fn remove_duplicates(&mut self) -> usize {
         let before_count = self.entries.len();
         let mut command_to_last_index: HashMap<&str, usize> = HashMap::new();
 
@@ -129,6 +129,8 @@ impl History {
 
         let removed_count = before_count - self.entries.len();
         println!("{} duplicate commands removed.", removed_count);
+
+        removed_count
     }
 
     pub fn remove_between_dates(&mut self, start: &NaiveDate, end: &NaiveDate) -> usize {
