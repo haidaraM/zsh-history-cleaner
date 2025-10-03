@@ -26,7 +26,7 @@ struct Cli {
     #[arg(short, long, action = ArgAction::SetTrue, default_value = "false")]
     keep_duplicates: bool,
 
-    /// Remove commands between two dates (YYYY-MM-DD YYYY-MM-DD). The start date must be before or equal to the end date.
+    /// Remove commands between the provided two dates (included): YYYY-MM-DD YYYY-MM-DD. The first date must be before or equal to the second date.
     /// Example: --remove-between 2023-01-01 2023-06-30
     #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
     remove_between: Option<Vec<NaiveDate>>,
@@ -97,7 +97,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if history.size() == initial_size {
-        println!("No changes made to the history file.");
+        println!("No changes were made to the history file.");
         return Ok(None);
     }
 

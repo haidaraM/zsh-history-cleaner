@@ -27,7 +27,7 @@ zhc --help
 ## Usage
 
 ```
-Clean your history by removing duplicate commands, command
+Clean your commands history by removing duplicate commands, commands between dates, etc...
 
 By default, all the duplicate commands are removed.
 
@@ -47,6 +47,9 @@ Options:
 
   -k, --keep-duplicates
           Should we keep duplicate commands in the history file?
+
+  -r, --remove-between <START_DATE> <END_DATE>
+          Remove commands between the provided two dates (included): YYYY-MM-DD YYYY-MM-DD. The first date must be before or equal to the second date. Example: --remove-between 2023-01-01 2023-06-30
 
   -h, --help
           Print help (see a summary with '-h')
