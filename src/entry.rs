@@ -1,4 +1,6 @@
 use crate::errors;
+use chrono::DateTime;
+use chrono::Local;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
@@ -43,6 +45,11 @@ impl HistoryEntry {
         &self.timestamp
     }
 
+    /// Converts the UNIX timestamp to a `DateTime<Local>`, returning None for invalid timestamps.
+    pub fn timestamp_as_date_time(&self) -> Option<DateTime<Local>> {
+        DateTime::from_timestamp(self.timestamp as i64, 0).map(|dt| dt.with_timezone(&Local))
+    }
+
     pub fn command(&self) -> &str {
         &self.command
     }
@@ -57,10 +64,11 @@ impl Display for HistoryEntry {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Command: '{}', Executed at: {}, Duration: {}s",
+            "Command executed at '{}' for '{}s': {}",
+            self.timestamp_as_date_time()
+                .map_or_else(|| self.timestamp.to_string(), |dt| dt.to_string()),
+            self.duration.as_secs(),
             self.command,
-            self.timestamp,
-            self.duration.as_secs()
         )
     }
 }
@@ -248,13 +256,24 @@ world'\"#;
         assert_ne!(entry_1, entry_3);
     }
 
-    // Test the Display implementation for HistoryEntry
     #[test]
-    fn test_display_history() {
-        let history = HistoryEntry::try_from(": 1731884069:10;cd ~").unwrap();
+    fn test_timestamp_as_date_time() {
+        let entry = HistoryEntry::try_from(": 1759099958:0;ls").unwrap();
         assert_eq!(
-            "Command: 'cd ~', Executed at: 1731884069, Duration: 10s",
-            format!("{}", history)
+            entry.timestamp_as_date_time().unwrap().timestamp() as u64,
+            1759099958
         );
+
+        assert_eq!(
+            entry.timestamp,
+            entry.timestamp_as_date_time().unwrap().timestamp() as u64
+        );
+    }
+
+    #[test]
+    fn test_timestamp_as_date_time_edge_cases() {
+        // Test timestamp 0 (Unix epoch)
+        let entry_zero = HistoryEntry::try_from(": 0000000000:0;ls").unwrap();
+        assert!(entry_zero.timestamp_as_date_time().is_some());
     }
 }
