@@ -8,17 +8,9 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
-pub struct History {
-    /// The filename where the history was read
-    filename: String,
-
-    /// The history entries
-    entries: Vec<HistoryEntry>,
-}
-
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
-fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
+fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
     let mut commands = Vec::new();
     let mut current_command = String::new();
 
@@ -55,13 +47,21 @@ fn preprocess_history<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, error
     Ok(commands)
 }
 
+pub struct History {
+    /// The filename where the history was read
+    filename: String,
+
+    /// The history entries
+    entries: Vec<HistoryEntry>,
+}
+
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
     pub fn from_file<P: AsRef<Path>>(filepath: &P) -> Result<Self, errors::HistoryError> {
         let expanded_path =
             expand_tilde(filepath).expect("Failed to expand tilde in the file path");
 
-        let commands = preprocess_history(&expanded_path)?;
+        let commands = read_history_file(&expanded_path)?;
 
         let entries = commands
             .into_iter()
@@ -69,7 +69,7 @@ impl History {
             .collect::<Vec<HistoryEntry>>();
 
         Ok(History {
-            filename: expanded_path.to_str().unwrap().to_string(),
+            filename: expanded_path.to_string_lossy().to_string(),
             entries,
         })
     }
@@ -159,14 +159,17 @@ impl History {
         removed_count
     }
 
+    /// Returns the number of entries in the history
     pub fn size(&self) -> usize {
         self.entries.len()
     }
 
+    /// Returns true if the history is empty
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
 
+    /// Returns the filename where the history was read
     pub fn filename(&self) -> &str {
         &self.filename
     }
