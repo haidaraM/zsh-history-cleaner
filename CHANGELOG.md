@@ -1,3 +1,10 @@
+## [0.3.1] - 2025-10-05
+
+### ⚙️ Miscellaneous Tasks
+
+- Use a single workflow to test and publish ([#8](https://github.com/haidaraM/zsh-history-cleaner/pull/8))
+- Add a Makefile to bump version and update CHANGELOG
+
 ## [0.3.0] - 2025-10-05
 
 ### 🚀 Features
