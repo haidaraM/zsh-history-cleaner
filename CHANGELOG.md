@@ -1,3 +1,9 @@
+## [0.3.0] - 2025-10-05
+
+### 🚀 Features
+
+- Automate releases and CHANGELOG via GHA, cargo-release and git-cliff ([#7](https://github.com/haidaraM/zsh-history-cleaner/pull/7))
+
 ## [0.2.0] - 2025-10-05
 
 ### 🚀 Features
