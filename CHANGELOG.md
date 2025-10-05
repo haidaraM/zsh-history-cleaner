@@ -7,6 +7,7 @@
 ### 🐛 Bug Fixes
 
 - *(ci)* Install cargo-release in the release workflow
+- *(ci)* Allow detached HEAD in release workflow
 
 ## [0.2.0] - 2025-10-05
 
