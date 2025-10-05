@@ -1,4 +1,10 @@
 
+## [0.3.3] - 2025-10-05
+
+### ⚙️ Miscellaneous Tasks
+
+- Ensure the GH token has the 'contents: write' permission to create release
+
 ## [0.3.2] - 2025-10-05
 
 ### ⚙️ Miscellaneous Tasks
