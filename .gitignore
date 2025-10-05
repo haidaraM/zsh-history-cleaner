@@ -24,3 +24,5 @@ rust-project.json
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/launch.json
+
+git-cliff/
