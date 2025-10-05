@@ -30,3 +30,9 @@ expand-tilde = "0.6.1"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 test_helpers = { path = "test_helpers" }
+
+# https://github.com/crate-ci/cargo-release
+[package.metadata.release]
+allow-branch = ["main", "cargo-release"]
+tag-name = "{{version}}"
+pre-release-hook = ["git", "cliff", "-o", "CHANGELOG.md", "--tag", "{{version}}" ]

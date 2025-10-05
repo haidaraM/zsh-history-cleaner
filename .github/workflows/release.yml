@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  generate-changelog:
+    name: Generate changelog
+    runs-on: ubuntu-latest
+    outputs:
+      release_body: ${{ steps.git-cliff.outputs.content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --no-exec --github-repo ${{ github.repository }}
+
+      - name: Display changelog
+        run: echo "${{ steps.git-cliff.outputs.content }}"
+
+  publish:
+    name: Publish to crates.io
+    needs: generate-changelog
+    runs-on: ubuntu-latest
+    environment: crates.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo release publish --execute
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          make_latest: true
+          body: ${{ needs.generate-changelog.outputs.release_body }}
