@@ -1,4 +1,10 @@
 
+## [0.3.2] - 2025-10-05
+
+### ⚙️ Miscellaneous Tasks
+
+- Implement Trusted Publishing to crates.io ([#9](https://github.com/haidaraM/zsh-history-cleaner/pull/9))
+
 ## [0.3.1] - 2025-10-05
 
 ### ⚙️ Miscellaneous Tasks
