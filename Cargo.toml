@@ -33,6 +33,6 @@ test_helpers = { path = "test_helpers" }
 
 # https://github.com/crate-ci/cargo-release
 [package.metadata.release]
-allow-branch = ["main", "cargo-release"]
+allow-branch = ["main"]
 tag-name = "{{version}}"
 pre-release-hook = ["git", "cliff", "-o", "CHANGELOG.md", "--tag", "{{version}}" ]
