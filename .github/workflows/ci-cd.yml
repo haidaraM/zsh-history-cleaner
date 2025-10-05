@@ -32,7 +32,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     environment: crates.io
     permissions:
-      id-token: write
+      id-token: write # for OIDC
+      contents: write # for releases
     steps:
       - name: Checkout
         uses: actions/checkout@v5
