@@ -30,6 +30,10 @@ struct Cli {
     /// Example: --remove-between 2023-01-01 2023-06-30
     #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
     remove_between: Option<Vec<NaiveDate>>,
+
+    /// Show time-based analysis of commands
+    #[arg(long)]
+    analyze_by_time: bool,
 }
 
 impl Cli {
@@ -69,6 +73,12 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
             "No entries found in the history file '{}' Nothing to do.",
             history.filename()
         );
+        return Ok(None);
+    }
+
+    if cli.analyze_by_time {
+        let time_analysis = history.analyze_by_time();
+        println!("{}", time_analysis);
         return Ok(None);
     }
 

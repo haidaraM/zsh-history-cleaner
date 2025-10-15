@@ -1,51 +1,15 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use chrono::{Local, NaiveDate};
+use chrono::{Duration, Local, NaiveDate};
 use expand_tilde::expand_tilde;
+use humanize_duration::prelude::DurationExt;
+use humanize_duration::Truncate;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
-
-/// Reads a Zsh history file and processes its contents into a vector of complete commands.
-/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
-fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
-    let mut commands = Vec::new();
-    let mut current_command = String::new();
-
-    let name = filepath.as_ref().to_string_lossy().to_string();
-
-    let file = File::open(filepath)
-        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
-    let reader = BufReader::new(file);
-
-    for (counter, line) in reader.lines().enumerate() {
-        let line = line.map_err(|e| {
-            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
-        })?;
-        let trimmed = line.trim_end(); // Trim trailing whitespace
-        if trimmed.ends_with('\\') {
-            // Remove the backslash and keep appending
-            current_command.push_str(trimmed);
-        } else {
-            if !current_command.is_empty() {
-                // Still appending a multi-line command
-                current_command.push('\n');
-            }
-            current_command.push_str(trimmed);
-
-            commands.push(current_command.clone());
-            current_command.clear();
-        }
-    }
-
-    if !current_command.is_empty() {
-        commands.push(current_command);
-    }
-
-    Ok(commands)
-}
 
 pub struct History {
     /// The filename where the history was read
@@ -53,6 +17,21 @@ pub struct History {
 
     /// The history entries
     entries: Vec<HistoryEntry>,
+}
+/// Represents the analysis of history commands by time
+/// # Fields
+/// - `filename`: The filename where the history was read
+/// - `total_commands`: The total number of commands in the history
+/// - `date_range`: The range of dates covered by the commands (min_date, max_date)
+#[derive(Debug)]
+pub struct TimeAnalysis {
+    pub filename: String,
+    pub total_commands: usize,
+    pub date_range: (NaiveDate, NaiveDate),
+    //pub commands_per_day: HashMap<NaiveDate, usize>,
+    //pub commands_per_week: HashMap<u32, usize>, // Week number
+    //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
+    //pub commands_per_year: HashMap<i32, usize>, // Year
 }
 
 impl History {
@@ -159,6 +138,30 @@ impl History {
         removed_count
     }
 
+    /// Analyze the history commands by date
+    pub fn analyze_by_time(&self) -> TimeAnalysis {
+        let date_range = self
+            .entries
+            .iter()
+            .filter_map(|entry| entry.timestamp_as_date_time())
+            .map(|dt| dt.date_naive())
+            .fold(None, |acc: Option<(NaiveDate, NaiveDate)>, current_date| {
+                Some(match acc {
+                    None => (current_date, current_date), // Initialize with the first date
+                    Some((min, max)) => (min.min(current_date), max.max(current_date)),
+                })
+            })
+            .unwrap_or_else(|| {
+                let now = Local::now().date_naive();
+                (now, now)
+            });
+        TimeAnalysis {
+            filename: self.filename.clone(),
+            total_commands: self.entries.len(),
+            date_range,
+        }
+    }
+
     /// Returns the number of entries in the history
     pub fn size(&self) -> usize {
         self.entries.len()
@@ -173,6 +176,63 @@ impl History {
     pub fn filename(&self) -> &str {
         &self.filename
     }
+}
+
+impl Display for TimeAnalysis {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
+        let human_duration = duration.human(Truncate::Day);
+        writeln!(f, "History Analysis for {}", self.filename)?;
+        writeln!(
+            f,
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        )?;
+        writeln!(
+            f,
+            "Date Range: {} to {} ({})",
+            self.date_range.0, self.date_range.1, human_duration
+        )?;
+        writeln!(f, "Total Commands: {}", self.total_commands)
+    }
+}
+
+/// Reads a Zsh history file and processes its contents into a vector of complete commands.
+/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
+fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
+    let mut commands = Vec::new();
+    let mut current_command = String::new();
+
+    let name = filepath.as_ref().to_string_lossy().to_string();
+
+    let file = File::open(filepath)
+        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+    let reader = BufReader::new(file);
+
+    for (counter, line) in reader.lines().enumerate() {
+        let line = line.map_err(|e| {
+            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
+        })?;
+        let trimmed = line.trim_end(); // Trim trailing whitespace
+        if trimmed.ends_with('\\') {
+            // Remove the backslash and keep appending
+            current_command.push_str(trimmed);
+        } else {
+            if !current_command.is_empty() {
+                // Still appending a multi-line command
+                current_command.push('\n');
+            }
+            current_command.push_str(trimmed);
+
+            commands.push(current_command.clone());
+            current_command.clear();
+        }
+    }
+
+    if !current_command.is_empty() {
+        commands.push(current_command);
+    }
+
+    Ok(commands)
 }
 
 #[cfg(test)]
