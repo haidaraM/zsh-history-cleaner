@@ -70,28 +70,28 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
 
     if history.is_empty() {
         println!(
-            "No entries found in the history file '{}' Nothing to do.",
+            "No entries found in the history file '{}'.",
             history.filename()
         );
         return Ok(None);
+    }
+
+    if cli.dry_run && !cli.analyze_by_time {
+        println!(
+            "===================================================================================="
+        );
+        println!(
+            "============ Dry run mode enabled. No changes will be saved to the history file. ===="
+        );
+        println!(
+            "===================================================================================="
+        );
     }
 
     if cli.analyze_by_time {
         let time_analysis = history.analyze_by_time();
         println!("{}", time_analysis);
         return Ok(None);
-    }
-
-    if cli.dry_run {
-        println!(
-            "===================================================================================="
-        );
-        println!(
-            "============ Dry run mode enabled. No changes will be made to the history file. ===="
-        );
-        println!(
-            "===================================================================================="
-        );
     }
 
     let initial_size = history.size();

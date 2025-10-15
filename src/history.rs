@@ -18,21 +18,6 @@ pub struct History {
     /// The history entries
     entries: Vec<HistoryEntry>,
 }
-/// Represents the analysis of history commands by time
-/// # Fields
-/// - `filename`: The filename where the history was read
-/// - `total_commands`: The total number of commands in the history
-/// - `date_range`: The range of dates covered by the commands (min_date, max_date)
-#[derive(Debug)]
-pub struct TimeAnalysis {
-    pub filename: String,
-    pub total_commands: usize,
-    pub date_range: (NaiveDate, NaiveDate),
-    //pub commands_per_day: HashMap<NaiveDate, usize>,
-    //pub commands_per_week: HashMap<u32, usize>, // Week number
-    //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
-    //pub commands_per_year: HashMap<i32, usize>, // Year
-}
 
 impl History {
     /// Reads a Zsh history file and populates a `History` struct
@@ -140,8 +125,20 @@ impl History {
 
     /// Analyze the history commands by date
     pub fn analyze_by_time(&self) -> TimeAnalysis {
-        let date_range = self
-            .entries
+        let date_range = self.date_range().unwrap_or_else(|| {
+            let now = Local::now().date_naive();
+            (now, now)
+        });
+        TimeAnalysis {
+            filename: self.filename.clone(),
+            total_commands: self.entries.len(),
+            date_range,
+        }
+    }
+
+    /// Returns the range of dates covered by the commands (min_date, max_date)
+    pub fn date_range(&self) -> Option<(NaiveDate, NaiveDate)> {
+        self.entries
             .iter()
             .filter_map(|entry| entry.timestamp_as_date_time())
             .map(|dt| dt.date_naive())
@@ -151,15 +148,6 @@ impl History {
                     Some((min, max)) => (min.min(current_date), max.max(current_date)),
                 })
             })
-            .unwrap_or_else(|| {
-                let now = Local::now().date_naive();
-                (now, now)
-            });
-        TimeAnalysis {
-            filename: self.filename.clone(),
-            total_commands: self.entries.len(),
-            date_range,
-        }
     }
 
     /// Returns the number of entries in the history
@@ -176,6 +164,22 @@ impl History {
     pub fn filename(&self) -> &str {
         &self.filename
     }
+}
+
+/// Represents the analysis of history commands by time
+/// # Fields
+/// - `filename`: The filename where the history was read
+/// - `total_commands`: The total number of commands in the history
+/// - `date_range`: The range of dates covered by the commands (min_date, max_date)
+#[derive(Debug)]
+pub struct TimeAnalysis {
+    pub filename: String,
+    pub total_commands: usize,
+    pub date_range: (NaiveDate, NaiveDate),
+    //pub commands_per_day: HashMap<NaiveDate, usize>,
+    //pub commands_per_week: HashMap<u32, usize>, // Week number
+    //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
+    //pub commands_per_year: HashMap<i32, usize>, // Year
 }
 
 impl Display for TimeAnalysis {
@@ -525,5 +529,36 @@ line'"#
         );
         assert_eq!(removed_count, 0, "No entries should have been removed");
         assert_eq!(history.entries.len(), 3, "We should still have 3 entries");
+    }
+
+    #[test]
+    fn test_date_range() {
+        // Common case with multiple entries
+        let cmds = [
+            ": 1732577005:0;echo 'first command'",
+            ": 1792101549:0;echo 'second command'",
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+        let date_range = history.date_range().unwrap();
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 11, 26).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2026, 10, 15).unwrap());
+
+        // Empty history
+        let cmds: [&str; 0] = [];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let empty_history = History::from_file(&tmp_hist_file).unwrap();
+        assert!(empty_history.date_range().is_none());
+
+        // Reverse order entries
+        let cmds = [
+            ": 1792101549:0;echo 'second command'",
+            ": 1732577005:0;echo 'first command'",
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+        let date_range = history.date_range().unwrap();
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 11, 26).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2026, 10, 15).unwrap());
     }
 }
