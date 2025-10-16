@@ -97,6 +97,29 @@ impl History {
         removed_count
     }
 
+    /// Return the top n most frequent commands
+    /// If n is 0, returns an empty vector.
+    pub fn top_n_frequent_commands(&self, n: usize) -> Vec<(String, usize)> {
+        if n == 0 || self.entries.is_empty() {
+            return Vec::new();
+        }
+
+        let mut command_count: HashMap<&str, usize> = HashMap::new();
+
+        for entry in &self.entries {
+            *command_count.entry(entry.command()).or_insert(0) += 1;
+        }
+
+        let mut count_vec: Vec<(&str, usize)> = command_count.into_iter().collect();
+        count_vec.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by count descending
+        count_vec.truncate(n);
+
+        count_vec
+            .into_iter()
+            .map(|(cmd, count)| (cmd.to_string(), count))
+            .collect()
+    }
+
     /// Remove commands between two dates (inclusive).
     pub fn remove_between_dates(&mut self, start: &NaiveDate, end: &NaiveDate) -> usize {
         let before_count = self.entries.len();
@@ -133,6 +156,7 @@ impl History {
             filename: self.filename.clone(),
             total_commands: self.entries.len(),
             date_range,
+            top_n_commands: self.top_n_frequent_commands(10),
         }
     }
 
@@ -176,6 +200,7 @@ pub struct TimeAnalysis {
     pub filename: String,
     pub total_commands: usize,
     pub date_range: (NaiveDate, NaiveDate),
+    pub top_n_commands: Vec<(String, usize)>,
     //pub commands_per_day: HashMap<NaiveDate, usize>,
     //pub commands_per_week: HashMap<u32, usize>, // Week number
     //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
@@ -193,10 +218,19 @@ impl Display for TimeAnalysis {
         )?;
         writeln!(
             f,
-            "Date Range: {} to {} ({})",
+            "🗓️ Date Range: {} to {} ({})",
             self.date_range.0, self.date_range.1, human_duration
         )?;
-        writeln!(f, "Total Commands: {}", self.total_commands)
+        writeln!(f, "#  Total Commands: {}\n", self.total_commands)?;
+        writeln!(f, "🔥 Top {} Commands:", self.top_n_commands.len())?;
+
+        let mut counter = 1;
+        self.top_n_commands.iter().for_each(|(name, count)| {
+            writeln!(f, "{:5}. '{}' ({} times)", counter, name, count).unwrap();
+            counter += 1;
+        });
+
+        write!(f, "")
     }
 }
 

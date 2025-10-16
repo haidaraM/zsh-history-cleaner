@@ -31,9 +31,9 @@ struct Cli {
     #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
     remove_between: Option<Vec<NaiveDate>>,
 
-    /// Show time-based analysis of commands
+    /// Analyze the history file and provide statistics about the commands over time.
     #[arg(long)]
-    analyze_by_time: bool,
+    analyze: bool,
 }
 
 impl Cli {
@@ -76,7 +76,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    if cli.dry_run && !cli.analyze_by_time {
+    if cli.dry_run && !cli.analyze {
         println!(
             "===================================================================================="
         );
@@ -88,7 +88,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
         );
     }
 
-    if cli.analyze_by_time {
+    if cli.analyze {
         let time_analysis = history.analyze_by_time();
         println!("{}", time_analysis);
         return Ok(None);

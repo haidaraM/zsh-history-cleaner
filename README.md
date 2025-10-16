@@ -24,6 +24,21 @@ cargo install zsh-history-cleaner
 zhc --help
 ```
 
+## Examples:
+
+- Analyze the history file and print some statistics:
+    ```shell
+    $ zhc --analyze
+    ```
+- Remove duplicate commands from the default history file (`~/.zsh_history`):
+    ```shell
+    $ zhc
+    ```
+- Remove commands between two dates (inclusive) and keep duplicate commands:
+    ```shell
+    $ zhc --remove-between 2023-01-01 2023-06-30 --keep-duplicates
+    ```
+
 ## Usage
 
 ```

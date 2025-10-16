@@ -28,6 +28,7 @@ pub struct HistoryEntry {
 
     /// The time it took to execute the command.
     duration: Duration,
+    // TODO: Add a flag to indicate if the command might contain sensitive information (e.g., contains "password" or "secret")
 }
 
 impl HistoryEntry {
