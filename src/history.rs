@@ -154,7 +154,7 @@ impl History {
         });
         TimeAnalysis {
             filename: self.filename.clone(),
-            total_commands: self.entries.len(),
+            size: self.entries.len(),
             date_range,
             top_n_commands: self.top_n_frequent_commands(10),
         }
@@ -193,12 +193,12 @@ impl History {
 /// Represents the analysis of history commands by time
 /// # Fields
 /// - `filename`: The filename where the history was read
-/// - `total_commands`: The total number of commands in the history
+/// - `size`: The number of commands in the history
 /// - `date_range`: The range of dates covered by the commands (min_date, max_date)
 #[derive(Debug)]
 pub struct TimeAnalysis {
     pub filename: String,
-    pub total_commands: usize,
+    pub size: usize,
     pub date_range: (NaiveDate, NaiveDate),
     pub top_n_commands: Vec<(String, usize)>,
     //pub commands_per_day: HashMap<NaiveDate, usize>,
@@ -221,15 +221,12 @@ impl Display for TimeAnalysis {
             "🗓️ Date Range: {} to {} ({})",
             self.date_range.0, self.date_range.1, human_duration
         )?;
-        writeln!(f, "#  Total Commands: {}\n", self.total_commands)?;
+        writeln!(f, "#  Total Commands: {}\n", self.size)?;
         writeln!(f, "🔥 Top {} Commands:", self.top_n_commands.len())?;
 
-        let mut counter = 1;
-        self.top_n_commands.iter().for_each(|(name, count)| {
-            writeln!(f, "{:5}. '{}' ({} times)", counter, name, count).unwrap();
-            counter += 1;
-        });
-
+        for (i, item) in self.top_n_commands.iter().enumerate() {
+            writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
+        }
         write!(f, "")
     }
 }
