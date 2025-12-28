@@ -213,10 +213,11 @@ impl Display for TimeAnalysis {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
         let human_duration = duration.human(Truncate::Day);
+        let divider = "━".repeat(65);
         writeln!(f, "History Analysis for {}", self.filename)?;
         writeln!(
             f,
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "{divider}"
         )?;
         writeln!(
             f,
