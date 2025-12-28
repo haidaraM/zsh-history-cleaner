@@ -2,8 +2,8 @@ use crate::entry::HistoryEntry;
 use crate::errors;
 use chrono::{Duration, Local, NaiveDate};
 use expand_tilde::expand_tilde;
-use humanize_duration::prelude::DurationExt;
 use humanize_duration::Truncate;
+use humanize_duration::prelude::DurationExt;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs;
@@ -72,6 +72,7 @@ impl History {
 
     /// Remove the duplicate commands from the history.
     /// This function retains the last occurrence of a command when duplicates are found.
+    /// Returns the number of removed duplicate commands.
     pub fn remove_duplicates(&mut self) -> usize {
         let before_count = self.entries.len();
         let mut command_to_last_index: HashMap<&str, usize> = HashMap::new();
@@ -91,10 +92,7 @@ impl History {
 
         self.entries = new_entries;
 
-        let removed_count = before_count - self.entries.len();
-        println!("{} duplicate commands removed.", removed_count);
-
-        removed_count
+        before_count - self.entries.len()
     }
 
     /// Return the top n most frequent commands.
@@ -148,7 +146,7 @@ impl History {
         removed_count
     }
 
-    /// Analyze the history commands by date
+    /// Analyze the History
     pub fn analyze_by_time(&self) -> TimeAnalysis {
         let date_range = self.date_range().unwrap_or_else(|| {
             let now = Local::now().date_naive();
@@ -199,10 +197,16 @@ impl History {
 /// - `date_range`: The range of dates covered by the commands (min_date, max_date)
 #[derive(Debug)]
 pub struct TimeAnalysis {
+    /// The filename where the history was read
     pub filename: String,
+    /// The number of commands in the history
     pub size: usize,
+    /// The range of dates covered by the commands (min_date, max_date)
     pub date_range: (NaiveDate, NaiveDate),
+    /// The top N most frequent commands
     pub top_n_commands: Vec<(String, usize)>,
+    // The number of duplicate commands found
+    // pub duplicates_count: usize,
     //pub commands_per_day: HashMap<NaiveDate, usize>,
     //pub commands_per_week: HashMap<u32, usize>, // Week number
     //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
@@ -215,10 +219,7 @@ impl Display for TimeAnalysis {
         let human_duration = duration.human(Truncate::Day);
         let divider = "━".repeat(65);
         writeln!(f, "History Analysis for {}", self.filename)?;
-        writeln!(
-            f,
-            "{divider}"
-        )?;
+        writeln!(f, "{divider}")?;
         writeln!(
             f,
             "🗓️ Date Range: {} to {} ({})",

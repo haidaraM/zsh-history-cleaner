@@ -32,6 +32,7 @@ struct Cli {
     remove_between: Option<Vec<NaiveDate>>,
 
     /// Analyze the history file and provide statistics about the commands over time.
+    /// No changes are made to the history file when this flag is used.
     #[arg(long)]
     analyze: bool,
 }
@@ -77,15 +78,9 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.dry_run && !cli.analyze {
-        println!(
-            "===================================================================================="
-        );
-        println!(
-            "============ Dry run mode enabled. No changes will be saved to the history file. ===="
-        );
-        println!(
-            "===================================================================================="
-        );
+        println!("{}", "━".repeat(65));
+        println!("Dry run mode enabled: no changes will be saved to the filesystem.");
+        println!("{}", "━".repeat(65));
     }
 
     if cli.analyze {
@@ -99,7 +94,8 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     println!("{} entries in '{}'", history.size(), history.filename());
 
     if !cli.keep_duplicates {
-        history.remove_duplicates();
+        let count = history.remove_duplicates();
+        println!("{} duplicate commands found.", count);
     }
 
     if let Some(dates) = cli.remove_between {
@@ -112,6 +108,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if !cli.dry_run {
+        println!("Saving changes to the filesystem.");
         history.write(should_backup).map_err(|err| err.to_string())
     } else {
         Ok(None)
