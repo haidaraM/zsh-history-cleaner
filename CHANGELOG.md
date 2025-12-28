@@ -1,4 +1,10 @@
 
+## [0.4.0] - 2025-12-28
+
+### 🚀 Features
+
+- Add the ability to analyze the history with --analyze ([#10](https://github.com/haidaraM/zsh-history-cleaner/pull/10))
+
 ## [0.3.3] - 2025-10-05
 
 ### ⚙️ Miscellaneous Tasks
