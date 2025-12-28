@@ -106,7 +106,11 @@ impl History {
         let mut commands_count: HashMap<&str, usize> = HashMap::new();
 
         for entry in &self.entries {
-            *commands_count.entry(entry.command()).or_insert(0) += 1;
+            let command = entry.command().trim();
+            if command.is_empty() {
+                continue; // Skip empty commands
+            }
+            *commands_count.entry(command).or_insert(0) += 1;
         }
 
         let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
