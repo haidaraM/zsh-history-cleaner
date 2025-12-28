@@ -99,7 +99,7 @@ impl History {
 
     /// Return the top n most frequent commands.
     /// If n is 0, returns an empty vector.
-    pub fn top_n_frequent_commands(&self, n: usize) -> Vec<(String, usize)> {
+    pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
         if n == 0 || self.entries.is_empty() {
             return Vec::new();
         }
@@ -158,7 +158,7 @@ impl History {
             filename: self.filename.clone(),
             size: self.entries.len(),
             date_range,
-            top_n_commands: self.top_n_frequent_commands(10),
+            top_n_commands: self.top_n_commands(10),
         }
     }
 
