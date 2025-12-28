@@ -1,51 +1,15 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use chrono::{Local, NaiveDate};
+use chrono::{Duration, Local, NaiveDate};
 use expand_tilde::expand_tilde;
+use humanize_duration::Truncate;
+use humanize_duration::prelude::DurationExt;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
-
-/// Reads a Zsh history file and processes its contents into a vector of complete commands.
-/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
-fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
-    let mut commands = Vec::new();
-    let mut current_command = String::new();
-
-    let name = filepath.as_ref().to_string_lossy().to_string();
-
-    let file = File::open(filepath)
-        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
-    let reader = BufReader::new(file);
-
-    for (counter, line) in reader.lines().enumerate() {
-        let line = line.map_err(|e| {
-            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
-        })?;
-        let trimmed = line.trim_end(); // Trim trailing whitespace
-        if trimmed.ends_with('\\') {
-            // Remove the backslash and keep appending
-            current_command.push_str(trimmed);
-        } else {
-            if !current_command.is_empty() {
-                // Still appending a multi-line command
-                current_command.push('\n');
-            }
-            current_command.push_str(trimmed);
-
-            commands.push(current_command.clone());
-            current_command.clear();
-        }
-    }
-
-    if !current_command.is_empty() {
-        commands.push(current_command);
-    }
-
-    Ok(commands)
-}
 
 pub struct History {
     /// The filename where the history was read
@@ -108,6 +72,7 @@ impl History {
 
     /// Remove the duplicate commands from the history.
     /// This function retains the last occurrence of a command when duplicates are found.
+    /// Returns the number of removed duplicate commands.
     pub fn remove_duplicates(&mut self) -> usize {
         let before_count = self.entries.len();
         let mut command_to_last_index: HashMap<&str, usize> = HashMap::new();
@@ -127,10 +92,36 @@ impl History {
 
         self.entries = new_entries;
 
-        let removed_count = before_count - self.entries.len();
-        println!("{} duplicate commands removed.", removed_count);
+        before_count - self.entries.len()
+    }
 
-        removed_count
+    /// Return the top n most frequent commands.
+    /// If n is 0, returns an empty vector.
+    pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
+        if n == 0 || self.entries.is_empty() {
+            return Vec::new();
+        }
+
+        // Count occurrences of each command. The key is the command string slice.
+        let mut commands_count: HashMap<&str, usize> = HashMap::new();
+
+        for entry in &self.entries {
+            let command = entry.command().trim();
+            if command.is_empty() {
+                continue; // Skip empty commands
+            }
+            *commands_count.entry(command).or_insert(0) += 1;
+        }
+
+        let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
+        // Sort by command name ascending, then by count descending
+        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        count_vec.truncate(n);
+
+        count_vec
+            .into_iter()
+            .map(|(cmd, count)| (cmd.to_string(), count))
+            .collect()
     }
 
     /// Remove commands between two dates (inclusive).
@@ -159,6 +150,34 @@ impl History {
         removed_count
     }
 
+    /// Analyze the History
+    pub fn analyze_by_time(&self) -> TimeAnalysis {
+        let date_range = self.date_range().unwrap_or_else(|| {
+            let now = Local::now().date_naive();
+            (now, now)
+        });
+        TimeAnalysis {
+            filename: self.filename.clone(),
+            size: self.entries.len(),
+            date_range,
+            top_n_commands: self.top_n_commands(10),
+        }
+    }
+
+    /// Returns the range of dates covered by the commands (min_date, max_date)
+    pub fn date_range(&self) -> Option<(NaiveDate, NaiveDate)> {
+        self.entries
+            .iter()
+            .filter_map(|entry| entry.timestamp_as_date_time())
+            .map(|dt| dt.date_naive())
+            .fold(None, |acc: Option<(NaiveDate, NaiveDate)>, current_date| {
+                Some(match acc {
+                    None => (current_date, current_date), // Initialize with the first date
+                    Some((min, max)) => (min.min(current_date), max.max(current_date)),
+                })
+            })
+    }
+
     /// Returns the number of entries in the history
     pub fn size(&self) -> usize {
         self.entries.len()
@@ -173,6 +192,90 @@ impl History {
     pub fn filename(&self) -> &str {
         &self.filename
     }
+}
+
+/// Represents the analysis of history commands by time
+/// # Fields
+/// - `filename`: The filename where the history was read
+/// - `size`: The number of commands in the history
+/// - `date_range`: The range of dates covered by the commands (min_date, max_date)
+#[derive(Debug)]
+pub struct TimeAnalysis {
+    /// The filename where the history was read
+    pub filename: String,
+    /// The number of commands in the history
+    pub size: usize,
+    /// The range of dates covered by the commands (min_date, max_date)
+    pub date_range: (NaiveDate, NaiveDate),
+    /// The top N most frequent commands
+    pub top_n_commands: Vec<(String, usize)>,
+    // The number of duplicate commands found
+    // pub duplicates_count: usize,
+    //pub commands_per_day: HashMap<NaiveDate, usize>,
+    //pub commands_per_week: HashMap<u32, usize>, // Week number
+    //pub commands_per_month: HashMap<(i32, u32), usize>, // (Year, Month)
+    //pub commands_per_year: HashMap<i32, usize>, // Year
+}
+
+impl Display for TimeAnalysis {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
+        let human_duration = duration.human(Truncate::Day);
+        let divider = "━".repeat(65);
+        writeln!(f, "History Analysis for {}", self.filename)?;
+        writeln!(f, "{divider}")?;
+        writeln!(
+            f,
+            "🗓️ Date Range: {} to {} ({})",
+            self.date_range.0, self.date_range.1, human_duration
+        )?;
+        writeln!(f, "#  Total Commands: {}\n", self.size)?;
+        writeln!(f, "🔥 Top {} Commands:", self.top_n_commands.len())?;
+
+        for (i, item) in self.top_n_commands.iter().enumerate() {
+            writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
+        }
+        write!(f, "")
+    }
+}
+
+/// Reads a Zsh history file and processes its contents into a vector of complete commands.
+/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
+fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
+    let mut commands = Vec::new();
+    let mut current_command = String::new();
+
+    let name = filepath.as_ref().to_string_lossy().to_string();
+
+    let file = File::open(filepath)
+        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
+    let reader = BufReader::new(file);
+
+    for (counter, line) in reader.lines().enumerate() {
+        let line = line.map_err(|e| {
+            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
+        })?;
+        let trimmed = line.trim_end(); // Trim trailing whitespace
+        if trimmed.ends_with('\\') {
+            // Remove the backslash and keep appending
+            current_command.push_str(trimmed);
+        } else {
+            if !current_command.is_empty() {
+                // Still appending a multi-line command
+                current_command.push('\n');
+            }
+            current_command.push_str(trimmed);
+
+            commands.push(current_command.clone());
+            current_command.clear();
+        }
+    }
+
+    if !current_command.is_empty() {
+        commands.push(current_command);
+    }
+
+    Ok(commands)
 }
 
 #[cfg(test)]
@@ -465,5 +568,37 @@ line'"#
         );
         assert_eq!(removed_count, 0, "No entries should have been removed");
         assert_eq!(history.entries.len(), 3, "We should still have 3 entries");
+    }
+
+    /// Test the date_range function makes sure it correctly identifies the min and max dates
+    #[test]
+    fn test_date_range() {
+        // Common case with multiple entries
+        let cmds = [
+            ": 1707258478:0;echo 'first command'",
+            ": 1766959482:0;echo 'second command'",
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+        let date_range = history.date_range().unwrap();
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
+
+        // Empty history
+        let cmds: [&str; 0] = [];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let empty_history = History::from_file(&tmp_hist_file).unwrap();
+        assert!(empty_history.date_range().is_none());
+
+        // Reverse order entries
+        let cmds = [
+            ": 1766959482:0;echo 'second command'",
+            ": 1707258478:0;echo 'first command'",
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+        let date_range = history.date_range().unwrap();
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
     }
 }

@@ -30,6 +30,11 @@ struct Cli {
     /// Example: --remove-between 2023-01-01 2023-06-30
     #[arg(short, long, num_args = 2, value_names = ["START_DATE", "END_DATE"], value_parser = validate_date)]
     remove_between: Option<Vec<NaiveDate>>,
+
+    /// Analyze the history file and provide statistics about the commands over time.
+    /// No changes are made to the history file when this flag is used.
+    #[arg(long)]
+    analyze: bool,
 }
 
 impl Cli {
@@ -66,22 +71,22 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
 
     if history.is_empty() {
         println!(
-            "No entries found in the history file '{}' Nothing to do.",
+            "No entries found in the history file '{}'.",
             history.filename()
         );
         return Ok(None);
     }
 
-    if cli.dry_run {
-        println!(
-            "===================================================================================="
-        );
-        println!(
-            "============ Dry run mode enabled. No changes will be made to the history file. ===="
-        );
-        println!(
-            "===================================================================================="
-        );
+    if cli.dry_run && !cli.analyze {
+        println!("{}", "━".repeat(65));
+        println!("Dry run mode enabled: no changes will be saved to the filesystem.");
+        println!("{}", "━".repeat(65));
+    }
+
+    if cli.analyze {
+        let time_analysis = history.analyze_by_time();
+        println!("{}", time_analysis);
+        return Ok(None);
     }
 
     let initial_size = history.size();
@@ -89,7 +94,8 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     println!("{} entries in '{}'", history.size(), history.filename());
 
     if !cli.keep_duplicates {
-        history.remove_duplicates();
+        let count = history.remove_duplicates();
+        println!("{} duplicate commands found.", count);
     }
 
     if let Some(dates) = cli.remove_between {
@@ -102,6 +108,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if !cli.dry_run {
+        println!("Saving changes to the filesystem.");
         history.write(should_backup).map_err(|err| err.to_string())
     } else {
         Ok(None)

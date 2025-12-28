@@ -84,7 +84,10 @@ fn test_cli_no_change_in_history() {
         .read_to_string(&mut after_content)
         .expect("should read the temp file");
 
-    assert_eq!(before_content, after_content, "the history file should not change");
+    assert_eq!(
+        before_content, after_content,
+        "the history file should not change"
+    );
 }
 
 #[test]
