@@ -97,20 +97,22 @@ impl History {
         removed_count
     }
 
-    /// Return the top n most frequent commands
+    /// Return the top n most frequent commands.
     /// If n is 0, returns an empty vector.
     pub fn top_n_frequent_commands(&self, n: usize) -> Vec<(String, usize)> {
         if n == 0 || self.entries.is_empty() {
             return Vec::new();
         }
 
-        let mut command_count: HashMap<&str, usize> = HashMap::new();
+        // Count occurrences of each command. The key is the command string slice.
+        let mut commands_count: HashMap<&str, usize> = HashMap::new();
 
         for entry in &self.entries {
-            *command_count.entry(entry.command()).or_insert(0) += 1;
+            *commands_count.entry(entry.command()).or_insert(0) += 1;
         }
 
-        let mut count_vec: Vec<(&str, usize)> = command_count.into_iter().collect();
+        let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
+        count_vec.sort_by(|a, b| a.0.cmp(b.0)); // Sort by command
         count_vec.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by count descending
         count_vec.truncate(n);
 
