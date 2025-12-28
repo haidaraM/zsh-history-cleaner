@@ -562,18 +562,19 @@ line'"#
         assert_eq!(history.entries.len(), 3, "We should still have 3 entries");
     }
 
+    /// Test the date_range function makes sure it correctly identifies the min and max dates
     #[test]
     fn test_date_range() {
         // Common case with multiple entries
         let cmds = [
-            ": 1732577005:0;echo 'first command'",
-            ": 1792101549:0;echo 'second command'",
+            ": 1707258478:0;echo 'first command'",
+            ": 1766959482:0;echo 'second command'",
         ];
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
         let history = History::from_file(&tmp_hist_file).unwrap();
         let date_range = history.date_range().unwrap();
-        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 11, 26).unwrap());
-        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2026, 10, 15).unwrap());
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
 
         // Empty history
         let cmds: [&str; 0] = [];
@@ -583,13 +584,13 @@ line'"#
 
         // Reverse order entries
         let cmds = [
-            ": 1792101549:0;echo 'second command'",
-            ": 1732577005:0;echo 'first command'",
+            ": 1766959482:0;echo 'second command'",
+            ": 1707258478:0;echo 'first command'",
         ];
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
         let history = History::from_file(&tmp_hist_file).unwrap();
         let date_range = history.date_range().unwrap();
-        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 11, 26).unwrap());
-        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2026, 10, 15).unwrap());
+        assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
+        assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
     }
 }
