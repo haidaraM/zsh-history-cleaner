@@ -112,8 +112,8 @@ impl History {
         }
 
         let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
-        count_vec.sort_by(|a, b| a.0.cmp(b.0)); // Sort by command
-        count_vec.sort_by(|a, b| b.1.cmp(&a.1)); // Sort by count descending
+        // Sort by command name ascending, then by count descending
+        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         count_vec.truncate(n);
 
         count_vec
