@@ -59,7 +59,7 @@ Options:
           [default: ~/.zsh_history]
 
       --no-backup
-          [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{local_time}'
+          [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{timestamp}'
 
   -k, --keep-duplicates
           Should we keep duplicate commands in the history file?
@@ -75,6 +75,7 @@ Options:
 
   -V, --version
           Print version
+
 ```
 
 ## Development and test

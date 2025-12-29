@@ -18,7 +18,7 @@ struct Cli {
     #[arg(short = 'H', long, default_value = "~/.zsh_history")]
     history_file: String,
 
-    /// [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{local_time}'.
+    /// [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{timestamp}'.
     #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     no_backup: bool,
 
