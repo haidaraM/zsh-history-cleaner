@@ -1,3 +1,16 @@
+## [unreleased]
+
+### 🐛 Bug Fixes
+
+- Ensure the backup file is created + add missing test
+
+### 📚 Documentation
+
+- *(release)* Update CHANGELOG.md for next release
+
+### ⚙️ Miscellaneous Tasks
+
+- Add dependabot support ([#11](https://github.com/haidaraM/zsh-history-cleaner/pull/11))
 
 ## [0.4.0] - 2025-12-28
 
