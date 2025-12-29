@@ -3,7 +3,10 @@
 ### 🐛 Bug Fixes
 
 - Ensure the backup file is created + add missing test
-- Ensure the backup file is created + add missing test
+
+### 📚 Documentation
+
+- *(release)* Update CHANGELOG.md for next release
 
 ### ⚙️ Miscellaneous Tasks
 
