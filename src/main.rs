@@ -18,8 +18,8 @@ struct Cli {
     #[arg(short = 'H', long, default_value = "~/.zsh_history")]
     history_file: String,
 
-    /// [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory.
-    #[arg(short, long, action = ArgAction::SetFalse)]
+    /// [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{local_time}'.
+    #[arg(long, action = ArgAction::SetTrue, default_value = "false")]
     no_backup: bool,
 
     /// Should we keep duplicate commands in the history file?
@@ -33,7 +33,7 @@ struct Cli {
 
     /// Analyze the history file and provide statistics about the commands over time.
     /// No changes are made to the history file when this flag is used.
-    #[arg(long)]
+    #[arg(short, long)]
     analyze: bool,
 }
 

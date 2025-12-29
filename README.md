@@ -4,6 +4,7 @@ A command line tool to clean your .zsh history by:
 
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from specific time ranges.
+- Providing an analysis of your history file.
 - Removing commands matching some patterns (TODO)
 
 > [!WARNING]  
@@ -57,8 +58,8 @@ Options:
           
           [default: ~/.zsh_history]
 
-  -n, --no-backup
-          [USE WITH CAUTION!!] Disable history file backup. By default, a backup is written to '{history_file}.{timestamp}' in the current directory
+      --no-backup
+          [USE WITH CAUTION!!] Disable the history file backup. By default, a backup is written to '{history_file_path}.zhc_backup_{local_time}'
 
   -k, --keep-duplicates
           Should we keep duplicate commands in the history file?
@@ -66,7 +67,7 @@ Options:
   -r, --remove-between <START_DATE> <END_DATE>
           Remove commands between the provided two dates (included): YYYY-MM-DD YYYY-MM-DD. The first date must be before or equal to the second date. Example: --remove-between 2023-01-01 2023-06-30
 
-      --analyze
+  -a, --analyze
           Analyze the history file and provide statistics about the commands over time. No changes are made to the history file when this flag is used
 
   -h, --help
@@ -74,8 +75,6 @@ Options:
 
   -V, --version
           Print version
-
-
 ```
 
 ## Development and test

@@ -11,6 +11,11 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
+/// Suffix to append to the backup files before the local timestamp
+pub const BACKUP_FILE_SUFFIX: &str = ".zhc_backup_";
+/// Timestamp format for the backup files
+const BACKUP_FILE_TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%Hh%Mm%Ss%3fms";
+
 pub struct History {
     /// The filename where the history was read
     filename: String,
@@ -43,8 +48,10 @@ impl History {
     /// Otherwise, returns `None`.
     pub fn write(&self, backup: bool) -> Result<Option<String>, errors::HistoryError> {
         let backup_path = if backup {
-            let now = Local::now().format("%Y-%m-%d-%Hh%Mm%Ss%3fms").to_string();
-            let backup_path = format!("{}.{}", self.filename, now);
+            let now = Local::now()
+                .format(BACKUP_FILE_TIMESTAMP_FORMAT)
+                .to_string();
+            let backup_path = format!("{}{}{}", self.filename, BACKUP_FILE_SUFFIX, now);
 
             println!("Backing up the history to '{backup_path}'");
             fs::copy(&self.filename, backup_path.clone()).map_err(|e| {
