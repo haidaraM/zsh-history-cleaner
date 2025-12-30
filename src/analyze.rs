@@ -1,12 +1,114 @@
+use crate::history::History;
 use crate::utils::{TERMINAL_MAX_WIDTH, format_rank_icon, format_truncated};
-use chrono::{Duration, NaiveDate};
+use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table};
 use console::{measure_text_width, style};
 use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+
+/// Service for analyzing history data.
+/// This struct provides various analysis capabilities on a History instance,
+/// following the Service Pattern to separate analysis logic from data storage.
+pub struct HistoryAnalyzer<'a> {
+    history: &'a History,
+}
+
+impl<'a> HistoryAnalyzer<'a> {
+    /// Creates a new HistoryAnalyzer for the given history.
+    pub fn new(history: &'a History) -> Self {
+        Self { history }
+    }
+
+    /// Return the top n most frequent commands.
+    /// If n is 0, returns an empty vector.
+    pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
+        if n == 0 || self.history.entries().is_empty() {
+            return Vec::new();
+        }
+
+        // Count occurrences of each command. The key is the command string slice.
+        let mut commands_count: HashMap<&str, usize> = HashMap::new();
+
+        for entry in self.history.entries() {
+            if let Some(command) = entry.valid_command() {
+                *commands_count.entry(command).or_insert(0) += 1;
+            }
+        }
+
+        let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
+        // sort by count descending (then command name for ties), and take top n
+        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        count_vec.truncate(n);
+
+        count_vec
+            .into_iter()
+            .map(|(cmd, count)| (cmd.to_string(), count))
+            .collect()
+    }
+
+    /// Return the top n most frequent binaries (first word of the command).
+    /// If n is 0, returns an empty vector.
+    pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
+        if n == 0 || self.history.entries().is_empty() {
+            return Vec::new();
+        }
+
+        // Count occurrences of each binary (first word of the command)
+        let mut binaries_count: HashMap<&str, usize> = HashMap::new();
+
+        for entry in self.history.entries() {
+            if let Some(command) = entry.valid_command()
+                && let Some(binary) = command.split_whitespace().next()
+            {
+                *binaries_count.entry(binary).or_insert(0) += 1;
+            }
+        }
+
+        let mut count_vec: Vec<(&str, usize)> = binaries_count.into_iter().collect();
+        // sort by count descending (then binary name for ties), and take top n
+        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        count_vec.truncate(n);
+
+        count_vec
+            .into_iter()
+            .map(|(bin, count)| (bin.to_string(), count))
+            .collect()
+    }
+
+    /// Returns the range of dates covered by the commands (min_date, max_date)
+    pub fn date_range(&self) -> Option<(NaiveDate, NaiveDate)> {
+        self.history
+            .entries()
+            .iter()
+            .filter_map(|entry| entry.timestamp_as_date_time())
+            .map(|dt| dt.date_naive())
+            .fold(None, |acc: Option<(NaiveDate, NaiveDate)>, current_date| {
+                Some(match acc {
+                    None => (current_date, current_date), // Initialize with the first date
+                    Some((min, max)) => (min.min(current_date), max.max(current_date)),
+                })
+            })
+    }
+
+    /// Analyze the History and return a HistoryAnalysis struct
+    pub fn analyze(&self, n: usize) -> HistoryAnalysis {
+        let date_range = self.date_range().unwrap_or_else(|| {
+            let now = Local::now().date_naive();
+            (now, now)
+        });
+        HistoryAnalysis {
+            filename: self.history.filename().to_string(),
+            size: self.history.size(),
+            date_range,
+            top_n_commands: self.top_n_commands(n),
+            top_n_binaries: self.top_n_binaries(n),
+        }
+    }
+}
 
 /// Represents the analysis of history commands by time
 /// # Fields

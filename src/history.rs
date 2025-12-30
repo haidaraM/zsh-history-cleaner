@@ -1,4 +1,3 @@
-use crate::analyze::HistoryAnalysis;
 use crate::entry::HistoryEntry;
 use crate::errors;
 use crate::utils::read_history_file;
@@ -101,62 +100,6 @@ impl History {
         before_count - self.entries.len()
     }
 
-    /// Return the top n most frequent commands.
-    /// If n is 0, returns an empty vector.
-    pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
-        if n == 0 || self.entries.is_empty() {
-            return Vec::new();
-        }
-
-        // Count occurrences of each command. The key is the command string slice.
-        let mut commands_count: HashMap<&str, usize> = HashMap::new();
-
-        for entry in &self.entries {
-            if let Some(command) = entry.valid_command() {
-                *commands_count.entry(command).or_insert(0) += 1;
-            }
-        }
-
-        let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
-        // sort by count descending (then command name for ties), and take top n
-        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
-        count_vec.truncate(n);
-
-        count_vec
-            .into_iter()
-            .map(|(cmd, count)| (cmd.to_string(), count))
-            .collect()
-    }
-
-    /// Return the top n most frequent binaries (first word of the command).
-    /// If n is 0, returns an empty vector.
-    pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
-        if n == 0 || self.entries.is_empty() {
-            return Vec::new();
-        }
-
-        // Count occurrences of each binary (first word of the command)
-        let mut binaries_count: HashMap<&str, usize> = HashMap::new();
-
-        for entry in &self.entries {
-            if let Some(command) = entry.valid_command()
-                && let Some(binary) = command.split_whitespace().next()
-            {
-                *binaries_count.entry(binary).or_insert(0) += 1;
-            }
-        }
-
-        let mut count_vec: Vec<(&str, usize)> = binaries_count.into_iter().collect();
-        // sort by count descending (then binary name for ties), and take top n
-        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
-        count_vec.truncate(n);
-
-        count_vec
-            .into_iter()
-            .map(|(bin, count)| (bin.to_string(), count))
-            .collect()
-    }
-
     /// Remove commands between two dates (inclusive).
     pub fn remove_between_dates(&mut self, start: &NaiveDate, end: &NaiveDate) -> usize {
         let before_count = self.entries.len();
@@ -183,35 +126,6 @@ impl History {
         removed_count
     }
 
-    /// Analyze the History and return a HistoryAnalysis struct
-    pub fn analyze_by_time(&self) -> HistoryAnalysis {
-        let date_range = self.date_range().unwrap_or_else(|| {
-            let now = Local::now().date_naive();
-            (now, now)
-        });
-        HistoryAnalysis {
-            filename: self.filename.clone(),
-            size: self.entries.len(),
-            date_range,
-            top_n_commands: self.top_n_commands(10),
-            top_n_binaries: self.top_n_binaries(10),
-        }
-    }
-
-    /// Returns the range of dates covered by the commands (min_date, max_date)
-    pub fn date_range(&self) -> Option<(NaiveDate, NaiveDate)> {
-        self.entries
-            .iter()
-            .filter_map(|entry| entry.timestamp_as_date_time())
-            .map(|dt| dt.date_naive())
-            .fold(None, |acc: Option<(NaiveDate, NaiveDate)>, current_date| {
-                Some(match acc {
-                    None => (current_date, current_date), // Initialize with the first date
-                    Some((min, max)) => (min.min(current_date), max.max(current_date)),
-                })
-            })
-    }
-
     /// Returns the number of entries in the history
     pub fn size(&self) -> usize {
         self.entries.len()
@@ -225,6 +139,11 @@ impl History {
     /// Returns the filename where the history was read
     pub fn filename(&self) -> &str {
         &self.filename
+    }
+
+    /// Returns a read-only slice of the history entries
+    pub fn entries(&self) -> &[HistoryEntry] {
+        &self.entries
     }
 }
 
@@ -523,6 +442,8 @@ line'"#
     /// Test the date_range function makes sure it correctly identifies the min and max dates
     #[test]
     fn test_date_range() {
+        use crate::analyze::HistoryAnalyzer;
+
         // Common case with multiple entries
         let cmds = [
             ": 1707258478:0;echo 'first command'",
@@ -530,7 +451,8 @@ line'"#
         ];
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
         let history = History::from_file(&tmp_hist_file).unwrap();
-        let date_range = history.date_range().unwrap();
+        let analyzer = HistoryAnalyzer::new(&history);
+        let date_range = analyzer.date_range().unwrap();
         assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
         assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
 
@@ -538,7 +460,8 @@ line'"#
         let cmds: [&str; 0] = [];
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
         let empty_history = History::from_file(&tmp_hist_file).unwrap();
-        assert!(empty_history.date_range().is_none());
+        let empty_analyzer = HistoryAnalyzer::new(&empty_history);
+        assert!(empty_analyzer.date_range().is_none());
 
         // Reverse order entries
         let cmds = [
@@ -547,7 +470,8 @@ line'"#
         ];
         let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
         let history = History::from_file(&tmp_hist_file).unwrap();
-        let date_range = history.date_range().unwrap();
+        let analyzer = HistoryAnalyzer::new(&history);
+        let date_range = analyzer.date_range().unwrap();
         assert_eq!(date_range.0, NaiveDate::from_ymd_opt(2024, 2, 6).unwrap());
         assert_eq!(date_range.1, NaiveDate::from_ymd_opt(2025, 12, 28).unwrap());
     }

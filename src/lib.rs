@@ -1,4 +1,4 @@
-mod analyze;
+pub mod analyze;
 pub mod entry;
 pub mod errors;
 pub mod history;

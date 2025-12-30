@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 use chrono::NaiveDate;
 use clap::{ArgAction, Parser};
+use zsh_history_cleaner::analyze::HistoryAnalyzer;
 use zsh_history_cleaner::history;
 use zsh_history_cleaner::utils::TERMINAL_MAX_WIDTH;
 
@@ -85,7 +86,8 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.analyze {
-        let time_analysis = history.analyze_by_time();
+        let analyzer = HistoryAnalyzer::new(&history);
+        let time_analysis = analyzer.analyze(10);
         println!("{}", time_analysis);
         return Ok(None);
     }
