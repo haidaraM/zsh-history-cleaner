@@ -1,11 +1,11 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use crate::util::{TERMINAL_MAX_WIDTH, format_rank_icon, format_truncated, read_history_file};
+use crate::utils::{TERMINAL_MAX_WIDTH, format_rank_icon, format_truncated, read_history_file};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table};
-use console::style;
+use console::{measure_text_width, style};
 use expand_tilde::expand_tilde;
 use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
@@ -271,6 +271,20 @@ impl Display for TimeAnalysis {
         let top_border = format!("╭{}╮", "─".repeat(box_width - 2));
         let bottom_border = format!("╰{}╯", "─".repeat(box_width - 2));
 
+        // Helper closure to create a padded line for the box
+        let make_box_line = |content: String| -> String {
+            let visible_width = measure_text_width(&content);
+            // Calculate padding: box_width - visible_width - 4 (for "│ " and " │")
+            let padding_needed = box_width.saturating_sub(visible_width + 4);
+            format!(
+                "{} {}{} {}",
+                style("│").blue(),
+                content,
+                " ".repeat(padding_needed),
+                style("│").blue()
+            )
+        };
+
         // Format the title
         let title = format!(
             "📊 History Analysis for {}",
@@ -288,23 +302,11 @@ impl Display for TimeAnalysis {
         // Format total commands with highlighted number
         let total_commands = format!("📝 Total Commands: {}", style(&self.size).yellow().bold());
 
-        // Print the stats box
+        // Print the stats box with properly aligned borders
         writeln!(f, "{}", style(top_border).blue())?;
-        writeln!(f, "{} {} {}", style("│").blue(), title, style("│").blue())?;
-        writeln!(
-            f,
-            "{} {} {}",
-            style("│").blue(),
-            date_range_text,
-            style("│").blue()
-        )?;
-        writeln!(
-            f,
-            "{} {} {}",
-            style("│").blue(),
-            total_commands,
-            style("│").blue()
-        )?;
+        writeln!(f, "{}", make_box_line(title))?;
+        writeln!(f, "{}", make_box_line(date_range_text))?;
+        writeln!(f, "{}", make_box_line(total_commands))?;
         writeln!(f, "{}", style(bottom_border).blue())?;
         writeln!(f)?;
 

@@ -1,4 +1,4 @@
 pub mod entry;
 pub mod errors;
 pub mod history;
-pub mod util;
+pub mod utils;
