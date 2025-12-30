@@ -1080,6 +1080,7 @@ dependencies = [
  "chrono",
  "clap",
  "comfy-table",
+ "console",
  "expand-tilde",
  "glob",
  "humanize-duration",

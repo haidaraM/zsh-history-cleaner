@@ -270,7 +270,7 @@ impl Display for TimeAnalysis {
         writeln!(f, "{divider}")?;
         writeln!(
             f,
-            "🗓️ Date Range: {} to {} ({})",
+            "🗓️ Date Range: From {} to {} ({})",
             self.date_range.0, self.date_range.1, human_duration
         )?;
 

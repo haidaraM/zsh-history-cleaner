@@ -2,6 +2,7 @@ use crate::errors;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
+use console::style;
 
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
@@ -48,8 +49,16 @@ pub(crate) fn read_history_file<P: AsRef<Path>>(
 /// If the text exceeds max_len, it will be truncated and "..." will be appended.
 pub(crate) fn format_truncated(text: &str, max_len: usize, count: usize) -> String {
     if text.len() > max_len {
-        format!("{}... ({} times)", &text[..max_len], count)
+        format!(
+            "{}... {}",
+            &text[..max_len],
+            style(format!("({} times)", count)).dim().italic()
+        )
     } else {
-        format!("{} ({} times)", text, count)
+        format!(
+            "{} {}",
+            text,
+            style(format!("({} times)", count)).dim().italic()
+        )
     }
 }
