@@ -48,7 +48,7 @@ pub(crate) fn read_history_file<P: AsRef<Path>>(
 
 /// Helper function to truncate the text used for displaying the command and executables in table cells.
 /// If the text exceeds max_len, it will be truncated and "..." will be appended.
-pub(crate) fn truncate_count_text_for_table_cell(
+pub(crate) fn truncate_count_text(
     text: &str,
     max_len: usize,
     count: usize,
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_truncate_text_for_table_cell() {
         let text = "This is a very long command that exceeds the maximum length.";
-        let truncated = truncate_count_text_for_table_cell(text, 20, 5);
+        let truncated = truncate_count_text(text, 20, 5);
         // Remove ANSI escape codes for testing
         let truncated = strip_ansi_codes(&truncated);
         assert_eq!(truncated, "This is a very long ... (5 times)");

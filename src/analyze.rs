@@ -4,14 +4,14 @@
 //! history entries and generating statistics.
 
 use crate::history::History;
-use crate::utils::{format_rank_icon, truncate_count_text_for_table_cell};
+use crate::utils::{format_rank_icon, truncate_count_text};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table};
+use comfy_table::{Attribute, Cell, CellAlignment, ContentArrangement, Table};
 use console::{measure_text_width, style};
-use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
+use humanize_duration::Truncate;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -20,7 +20,6 @@ pub const TERMINAL_MAX_WIDTH: u8 = 90;
 
 /// Maximum length for text in table cells
 pub const MAX_CELL_TEXT_LENGTH: usize = 40;
-
 
 /// Service for analyzing history data.
 /// This struct provides various analysis capabilities on a History instance,
@@ -207,12 +206,7 @@ impl Display for HistoryAnalysis {
             f,
             "{} {}",
             style("🔥").bold(),
-            style(format!(
-                "Top {} Most Used:",
-                self.n
-            ))
-            .magenta()
-            .bold()
+            style(format!("Top {} Most Used:", self.n)).magenta().bold()
         )?;
 
         let mut table = Table::new();
@@ -231,18 +225,22 @@ impl Display for HistoryAnalysis {
 
         // The top N commands and executables may have different lengths
         for i in 0..self.top_n_commands.len().max(self.top_n_executables.len()) {
-            let rank_cell = Cell::new(format_rank_icon(i + 1));
+            let rank_cell = Cell::new(format_rank_icon(i + 1)).set_alignment(CellAlignment::Center);
 
             let command_cell = self
                 .top_n_commands
                 .get(i)
-                .map(|(cmd, count)| Cell::new(truncate_count_text_for_table_cell(cmd, MAX_CELL_TEXT_LENGTH, *count)))
+                .map(|(cmd, count)| {
+                    Cell::new(truncate_count_text(cmd, MAX_CELL_TEXT_LENGTH, *count))
+                })
                 .unwrap_or_else(|| Cell::new(""));
 
             let binary_cell = self
                 .top_n_executables
                 .get(i)
-                .map(|(bin, count)| Cell::new(truncate_count_text_for_table_cell(bin, MAX_CELL_TEXT_LENGTH, *count)))
+                .map(|(bin, count)| {
+                    Cell::new(truncate_count_text(bin, MAX_CELL_TEXT_LENGTH, *count))
+                })
                 .unwrap_or_else(|| Cell::new(""));
 
             table.add_row(vec![rank_cell, command_cell, binary_cell]);
