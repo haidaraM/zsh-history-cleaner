@@ -1,6 +1,6 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use crate::util::{format_truncated, read_history_file};
+use crate::util::{format_truncated, read_history_file, TERMINAL_MAX_WIDTH};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -264,7 +264,7 @@ impl Display for TimeAnalysis {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
         let human_duration = duration.human(Truncate::Day);
-        let divider = "━".repeat(65);
+        let divider = "━".repeat(TERMINAL_MAX_WIDTH.into());
 
         writeln!(f, "History Analysis for {}", self.filename)?;
         writeln!(f, "{divider}")?;
@@ -291,7 +291,7 @@ impl Display for TimeAnalysis {
                 Cell::new("Commands").add_attribute(Attribute::Bold),
                 Cell::new("Binaries").add_attribute(Attribute::Bold),
             ])
-            .set_width(80);
+            .set_width(TERMINAL_MAX_WIDTH.into());
 
         // The top N commands and binaries may have different lengths
         for i in 0..self.top_n_commands.len().max(self.top_n_binaries.len()) {

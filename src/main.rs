@@ -3,6 +3,7 @@ use std::process::ExitCode;
 use chrono::NaiveDate;
 use clap::{ArgAction, Parser};
 use zsh_history_cleaner::history;
+use zsh_history_cleaner::util::TERMINAL_MAX_WIDTH;
 
 /// Clean your commands history by removing duplicate commands, commands between dates, etc...
 ///
@@ -78,9 +79,9 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.dry_run && !cli.analyze {
-        println!("{}", "━".repeat(65));
+        println!("{}", "━".repeat(TERMINAL_MAX_WIDTH.into()));
         println!("Dry run mode enabled: no changes will be saved to the filesystem.");
-        println!("{}", "━".repeat(65));
+        println!("{}", "━".repeat(TERMINAL_MAX_WIDTH.into()));
     }
 
     if cli.analyze {
