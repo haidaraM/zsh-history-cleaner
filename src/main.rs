@@ -37,7 +37,7 @@ struct Cli {
     #[arg(short, long)]
     analyze: bool,
 
-    /// Number of top commands/binaries to display in analysis. Only used with --analyze.
+    /// Number of top commands/executables to display in analysis. Only used with --analyze.
     #[arg(long, default_value = "10", value_parser = clap::value_parser!(usize), requires = "analyze" )]
     top_n: usize,
 }

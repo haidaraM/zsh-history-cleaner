@@ -71,7 +71,7 @@ Options:
           Analyze the history file and provide statistics about the commands over time. No changes are made to the history file when this flag is used
 
       --top-n <TOP_N>
-          Number of top commands/binaries to display in analysis. Only used with --analyze
+          Number of top commands/executables to display in analysis. Only used with --analyze
           
           [default: 10]
 

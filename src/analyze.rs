@@ -62,25 +62,25 @@ impl<'a> HistoryAnalyzer<'a> {
             .collect()
     }
 
-    /// Return the top n most frequent binaries (first word of the command).
+    /// Return the top n most frequent executables (first word of the command).
     /// If n is 0, returns an empty vector.
-    pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
+    pub fn top_n_executables(&self, n: usize) -> Vec<(String, usize)> {
         if n == 0 || self.history.is_empty() {
             return Vec::new();
         }
 
         // Count occurrences of each binary (first word of the command)
-        let mut binaries_count: HashMap<&str, usize> = HashMap::new();
+        let mut executables_count: HashMap<&str, usize> = HashMap::new();
 
         for entry in self.history.entries() {
             if let Some(command) = entry.valid_command()
                 && let Some(binary) = command.split_whitespace().next()
             {
-                *binaries_count.entry(binary).or_insert(0) += 1;
+                *executables_count.entry(binary).or_insert(0) += 1;
             }
         }
 
-        let mut count_vec: Vec<(&str, usize)> = binaries_count.into_iter().collect();
+        let mut count_vec: Vec<(&str, usize)> = executables_count.into_iter().collect();
         // sort by count descending (then binary name for ties), and take top n
         count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         count_vec.truncate(n);
@@ -118,7 +118,7 @@ impl<'a> HistoryAnalyzer<'a> {
             date_range,
             n,
             top_n_commands: self.top_n_commands(n),
-            top_n_binaries: self.top_n_binaries(n),
+            top_n_executables: self.top_n_executables(n),
         }
     }
 }
@@ -140,8 +140,8 @@ pub struct HistoryAnalysis {
     pub n: usize,
     /// The top N most frequent commands
     pub top_n_commands: Vec<(String, usize)>,
-    /// The top N most frequent binaries
-    pub top_n_binaries: Vec<(String, usize)>,
+    /// The top N most frequent executables
+    pub top_n_executables: Vec<(String, usize)>,
     // The number of duplicate commands found
     // pub duplicates_count: usize,
     //pub commands_per_day: HashMap<NaiveDate, usize>,
@@ -224,13 +224,13 @@ impl Display for HistoryAnalysis {
                 Cell::new("").add_attribute(Attribute::Bold),
                 Cell::new(style("Commands").cyan().bold().to_string())
                     .add_attribute(Attribute::Bold),
-                Cell::new(style("Binaries").cyan().bold().to_string())
+                Cell::new(style("Executables").cyan().bold().to_string())
                     .add_attribute(Attribute::Bold),
             ])
             .set_width(TERMINAL_MAX_WIDTH.into());
 
-        // The top N commands and binaries may have different lengths
-        for i in 0..self.top_n_commands.len().max(self.top_n_binaries.len()) {
+        // The top N commands and executables may have different lengths
+        for i in 0..self.top_n_commands.len().max(self.top_n_executables.len()) {
             let rank_cell = Cell::new(format_rank_icon(i + 1));
 
             let command_cell = self
@@ -240,7 +240,7 @@ impl Display for HistoryAnalysis {
                 .unwrap_or_else(|| Cell::new(""));
 
             let binary_cell = self
-                .top_n_binaries
+                .top_n_executables
                 .get(i)
                 .map(|(bin, count)| Cell::new(truncate_count_text_for_table_cell(bin, MAX_CELL_TEXT_LENGTH, *count)))
                 .unwrap_or_else(|| Cell::new(""));

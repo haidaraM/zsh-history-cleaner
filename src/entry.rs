@@ -20,7 +20,7 @@ static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
 /// - `duration`: The time it took to execute the command.
 #[derive(Debug, Clone)]
 pub struct HistoryEntry {
-    /// The command executed by the user.
+    /// The full command executed by the user.
     command: String,
 
     /// The UNIX timestamp when the command was executed.

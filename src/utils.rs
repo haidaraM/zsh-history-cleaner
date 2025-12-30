@@ -46,7 +46,7 @@ pub(crate) fn read_history_file<P: AsRef<Path>>(
     Ok(commands)
 }
 
-/// Helper function to truncate the text used for displaying the command and binaries in table cells.
+/// Helper function to truncate the text used for displaying the command and executables in table cells.
 /// If the text exceeds max_len, it will be truncated and "..." will be appended.
 pub(crate) fn truncate_count_text_for_table_cell(
     text: &str,
