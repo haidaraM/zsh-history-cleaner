@@ -1,6 +1,9 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
 use chrono::{Duration, Local, NaiveDate};
+use comfy_table::Table;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::*;
 use expand_tilde::expand_tilde;
 use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
@@ -129,6 +132,8 @@ impl History {
             .collect()
     }
 
+    /// Return the top n most frequent binaries (first word of the command).
+    /// If n is 0, returns an empty vector.
     pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
         if n == 0 || self.entries.is_empty() {
             return Vec::new();
@@ -139,9 +144,10 @@ impl History {
 
         for entry in &self.entries {
             if let Some(command) = entry.valid_command()
-                && let Some(binary) = command.split_whitespace().next() {
-                    *binaries_count.entry(binary).or_insert(0) += 1;
-                }
+                && let Some(binary) = command.split_whitespace().next()
+            {
+                *binaries_count.entry(binary).or_insert(0) += 1;
+            }
         }
 
         let mut count_vec: Vec<(&str, usize)> = binaries_count.into_iter().collect();
@@ -181,7 +187,7 @@ impl History {
         removed_count
     }
 
-    /// Analyze the History
+    /// Analyze the History and return a TimeAnalysis struct
     pub fn analyze_by_time(&self) -> TimeAnalysis {
         let date_range = self.date_range().unwrap_or_else(|| {
             let now = Local::now().date_naive();
@@ -251,11 +257,14 @@ pub struct TimeAnalysis {
     //pub commands_per_year: HashMap<i32, usize>, // Year
 }
 
+/// Display implementation for TimeAnalysis.
+/// This formats the analysis in a human-readable way.
 impl Display for TimeAnalysis {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
         let human_duration = duration.human(Truncate::Day);
         let divider = "━".repeat(65);
+
         writeln!(f, "History Analysis for {}", self.filename)?;
         writeln!(f, "{divider}")?;
         writeln!(
@@ -265,17 +274,44 @@ impl Display for TimeAnalysis {
         )?;
 
         writeln!(f, "#  Total Commands: {}\n", self.size)?;
-        writeln!(f, "🔥 Top {} Commands:", self.top_n_commands.len())?;
 
-        for (i, item) in self.top_n_commands.iter().enumerate() {
-            writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
+        writeln!(
+            f,
+            "🔥 Top {}:",
+            self.top_n_commands.len().max(self.top_n_binaries.len())
+        )?;
+
+        let mut table = Table::new();
+        table
+            .load_preset(UTF8_FULL)
+            .set_header(vec![
+                Cell::new("Commands").add_attribute(Attribute::Bold),
+                Cell::new("Binaries").add_attribute(Attribute::Bold),
+            ])
+            .set_width(80);
+
+        // The top N commands and binaries may have different lengths
+        for i in 0..self.top_n_commands.len().max(self.top_n_binaries.len()) {
+            let command_cell = if let Some(command) = self.top_n_commands.get(i) {
+                let (mut cmd, count) = command.clone();
+                cmd.truncate(40);
+                Cell::new(format!("{} ({} times)", cmd, count))
+            } else {
+                Cell::new("")
+            };
+
+            let binary_cell = if let Some(bin) = self.top_n_binaries.get(i) {
+                let (mut bin, count) = bin.clone();
+                bin.truncate(40);
+                Cell::new(format!("{} ({} times)", bin, count))
+            } else {
+                Cell::new("")
+            };
+
+            table.add_row(vec![command_cell, binary_cell]);
         }
 
-        writeln!(f)?;
-        writeln!(f, "🔥 Top {} Binaries:", self.top_n_binaries.len())?;
-        for (i, item) in self.top_n_binaries.iter().enumerate() {
-            writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
-        }
+        writeln!(f, "{table}")?;
 
         write!(f, "")
     }

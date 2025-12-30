@@ -55,10 +55,13 @@ impl HistoryEntry {
         &self.command
     }
 
-    /// Checks if the entry has a valid (not empty and not a comment).
+    /// Returns the command if it is 'valid' (not empty, not a comment, not a no-op).
+    /// Note: This implementation is not perfect, but it's enough for basic filtering for now.
+    /// For example, it does not handle multi-line commands that start with a comment.
     pub fn valid_command(&self) -> Option<&str> {
         let trimmed_command = self.command.trim();
-        if trimmed_command.is_empty() || trimmed_command.starts_with('#') {
+        if trimmed_command.is_empty() || trimmed_command.starts_with('#') || trimmed_command == ":"
+        {
             None
         } else {
             Some(trimmed_command)
