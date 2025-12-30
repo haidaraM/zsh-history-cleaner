@@ -113,21 +113,45 @@ impl History {
         let mut commands_count: HashMap<&str, usize> = HashMap::new();
 
         for entry in &self.entries {
-            let command = entry.command().trim();
-            if command.is_empty() {
-                continue; // Skip empty commands
+            if let Some(command) = entry.valid_command() {
+                *commands_count.entry(command).or_insert(0) += 1;
             }
-            *commands_count.entry(command).or_insert(0) += 1;
         }
 
         let mut count_vec: Vec<(&str, usize)> = commands_count.into_iter().collect();
-        // Sort by command name ascending, then by count descending
+        // sort by count descending (then command name for ties), and take top n
         count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         count_vec.truncate(n);
 
         count_vec
             .into_iter()
             .map(|(cmd, count)| (cmd.to_string(), count))
+            .collect()
+    }
+
+    pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
+        if n == 0 || self.entries.is_empty() {
+            return Vec::new();
+        }
+
+        // Count occurrences of each binary (first word of the command)
+        let mut binaries_count: HashMap<&str, usize> = HashMap::new();
+
+        for entry in &self.entries {
+            if let Some(command) = entry.valid_command()
+                && let Some(binary) = command.split_whitespace().next() {
+                    *binaries_count.entry(binary).or_insert(0) += 1;
+                }
+        }
+
+        let mut count_vec: Vec<(&str, usize)> = binaries_count.into_iter().collect();
+        // sort by count descending (then binary name for ties), and take top n
+        count_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        count_vec.truncate(n);
+
+        count_vec
+            .into_iter()
+            .map(|(bin, count)| (bin.to_string(), count))
             .collect()
     }
 
@@ -168,6 +192,7 @@ impl History {
             size: self.entries.len(),
             date_range,
             top_n_commands: self.top_n_commands(10),
+            top_n_binaries: self.top_n_binaries(10),
         }
     }
 
@@ -216,6 +241,8 @@ pub struct TimeAnalysis {
     pub date_range: (NaiveDate, NaiveDate),
     /// The top N most frequent commands
     pub top_n_commands: Vec<(String, usize)>,
+    /// The top N most frequent binaries
+    pub top_n_binaries: Vec<(String, usize)>,
     // The number of duplicate commands found
     // pub duplicates_count: usize,
     //pub commands_per_day: HashMap<NaiveDate, usize>,
@@ -236,12 +263,20 @@ impl Display for TimeAnalysis {
             "🗓️ Date Range: {} to {} ({})",
             self.date_range.0, self.date_range.1, human_duration
         )?;
+
         writeln!(f, "#  Total Commands: {}\n", self.size)?;
         writeln!(f, "🔥 Top {} Commands:", self.top_n_commands.len())?;
 
         for (i, item) in self.top_n_commands.iter().enumerate() {
             writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
         }
+
+        writeln!(f)?;
+        writeln!(f, "🔥 Top {} Binaries:", self.top_n_binaries.len())?;
+        for (i, item) in self.top_n_binaries.iter().enumerate() {
+            writeln!(f, "{:5}. '{}' ({} times)", i + 1, item.0, item.1)?;
+        }
+
         write!(f, "")
     }
 }

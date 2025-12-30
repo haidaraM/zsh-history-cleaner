@@ -55,6 +55,16 @@ impl HistoryEntry {
         &self.command
     }
 
+    /// Checks if the entry has a valid (not empty and not a comment).
+    pub fn valid_command(&self) -> Option<&str> {
+        let trimmed_command = self.command.trim();
+        if trimmed_command.is_empty() || trimmed_command.starts_with('#') {
+            None
+        } else {
+            Some(trimmed_command)
+        }
+    }
+
     pub fn duration(&self) -> &Duration {
         &self.duration
     }
