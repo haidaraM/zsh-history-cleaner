@@ -26,7 +26,7 @@ impl<'a> HistoryAnalyzer<'a> {
     /// Return the top n most frequent commands.
     /// If n is 0, returns an empty vector.
     pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
-        if n == 0 || self.history.entries().is_empty() {
+        if n == 0 || self.history.is_empty() {
             return Vec::new();
         }
 
@@ -53,7 +53,7 @@ impl<'a> HistoryAnalyzer<'a> {
     /// Return the top n most frequent binaries (first word of the command).
     /// If n is 0, returns an empty vector.
     pub fn top_n_binaries(&self, n: usize) -> Vec<(String, usize)> {
-        if n == 0 || self.history.entries().is_empty() {
+        if n == 0 || self.history.is_empty() {
             return Vec::new();
         }
 
@@ -162,8 +162,8 @@ impl Display for HistoryAnalysis {
         };
 
         // Format the title
-        let title = format!(
-            "📊 History Analysis for {}",
+        let box_title = format!(
+            "📊 History Analysis for {}:",
             style(&self.filename).cyan().bold()
         );
 
@@ -180,7 +180,8 @@ impl Display for HistoryAnalysis {
 
         // Print the stats box with properly aligned borders
         writeln!(f, "{}", style(top_border).blue())?;
-        writeln!(f, "{}", make_box_line(title))?;
+        writeln!(f, "{}", make_box_line(box_title))?;
+        writeln!(f, "{}", make_box_line("".into()))?;
         writeln!(f, "{}", make_box_line(date_range_text))?;
         writeln!(f, "{}", make_box_line(total_commands))?;
         writeln!(f, "{}", style(bottom_border).blue())?;
