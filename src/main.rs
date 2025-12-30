@@ -2,9 +2,8 @@ use std::process::ExitCode;
 
 use chrono::NaiveDate;
 use clap::{ArgAction, Parser};
-use zsh_history_cleaner::analyze::HistoryAnalyzer;
+use zsh_history_cleaner::analyze::{HistoryAnalyzer, TERMINAL_MAX_WIDTH};
 use zsh_history_cleaner::history;
-use zsh_history_cleaner::utils::TERMINAL_MAX_WIDTH;
 
 /// Clean your commands history by removing duplicate commands, commands between dates, etc...
 ///
@@ -37,6 +36,10 @@ struct Cli {
     /// No changes are made to the history file when this flag is used.
     #[arg(short, long)]
     analyze: bool,
+
+    /// Number of top commands/binaries to display in analysis. Only used with --analyze.
+    #[arg(long, default_value = "10", value_parser = clap::value_parser!(usize), requires = "analyze" )]
+    top_n: usize,
 }
 
 impl Cli {
@@ -87,7 +90,7 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
 
     if cli.analyze {
         let analyzer = HistoryAnalyzer::new(&history);
-        let time_analysis = analyzer.analyze(10);
+        let time_analysis = analyzer.analyze(cli.top_n);
         println!("{}", time_analysis);
         return Ok(None);
     }

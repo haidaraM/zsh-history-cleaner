@@ -4,8 +4,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-/// Maximum width for terminal when displaying some things.
-pub const TERMINAL_MAX_WIDTH: u8 = 90;
 
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.

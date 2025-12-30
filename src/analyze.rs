@@ -1,5 +1,10 @@
+//! Analysis utilities for Zsh history data.
+//!
+//! This module provides the [`HistoryAnalyzer`] service for analyzing
+//! history entries and generating statistics.
+
 use crate::history::History;
-use crate::utils::{TERMINAL_MAX_WIDTH, format_rank_icon, truncate_count_text_for_table_cell};
+use crate::utils::{format_rank_icon, truncate_count_text_for_table_cell};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -9,6 +14,13 @@ use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+
+/// Maximum width for terminal when displaying some things.
+pub const TERMINAL_MAX_WIDTH: u8 = 90;
+
+/// Maximum length for text in table cells
+pub const MAX_CELL_TEXT_LENGTH: usize = 40;
+
 
 /// Service for analyzing history data.
 /// This struct provides various analysis capabilities on a History instance,
@@ -104,6 +116,7 @@ impl<'a> HistoryAnalyzer<'a> {
             filename: self.history.filename().to_string(),
             size: self.history.size(),
             date_range,
+            n,
             top_n_commands: self.top_n_commands(n),
             top_n_binaries: self.top_n_binaries(n),
         }
@@ -123,6 +136,8 @@ pub struct HistoryAnalysis {
     pub size: usize,
     /// The range of dates covered by the commands (min_date, max_date)
     pub date_range: (NaiveDate, NaiveDate),
+    /// Top n
+    pub n: usize,
     /// The top N most frequent commands
     pub top_n_commands: Vec<(String, usize)>,
     /// The top N most frequent binaries
@@ -194,7 +209,7 @@ impl Display for HistoryAnalysis {
             style("🔥").bold(),
             style(format!(
                 "Top {} Most Used:",
-                self.top_n_commands.len().max(self.top_n_binaries.len())
+                self.n
             ))
             .magenta()
             .bold()
@@ -221,13 +236,13 @@ impl Display for HistoryAnalysis {
             let command_cell = self
                 .top_n_commands
                 .get(i)
-                .map(|(cmd, count)| Cell::new(truncate_count_text_for_table_cell(cmd, 39, *count)))
+                .map(|(cmd, count)| Cell::new(truncate_count_text_for_table_cell(cmd, MAX_CELL_TEXT_LENGTH, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
             let binary_cell = self
                 .top_n_binaries
                 .get(i)
-                .map(|(bin, count)| Cell::new(truncate_count_text_for_table_cell(bin, 39, *count)))
+                .map(|(bin, count)| Cell::new(truncate_count_text_for_table_cell(bin, MAX_CELL_TEXT_LENGTH, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
             table.add_row(vec![rank_cell, command_cell, binary_cell]);

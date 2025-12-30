@@ -29,7 +29,7 @@ zhc --help
 
 - Analyze the history file and print some statistics:
     ```shell
-    $ zhc --analyze
+    $ zhc --analyze # or zhc -a
     ```
 - Remove duplicate commands from the default history file (`~/.zsh_history`):
     ```shell
@@ -69,6 +69,11 @@ Options:
 
   -a, --analyze
           Analyze the history file and provide statistics about the commands over time. No changes are made to the history file when this flag is used
+
+      --top-n <TOP_N>
+          Number of top commands/binaries to display in analysis. Only used with --analyze
+          
+          [default: 10]
 
   -h, --help
           Print help (see a summary with '-h')
