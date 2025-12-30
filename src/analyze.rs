@@ -1,5 +1,5 @@
 use crate::history::History;
-use crate::utils::{TERMINAL_MAX_WIDTH, format_rank_icon, format_truncated};
+use crate::utils::{TERMINAL_MAX_WIDTH, format_rank_icon, truncate_count_text_for_table_cell};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -221,13 +221,13 @@ impl Display for HistoryAnalysis {
             let command_cell = self
                 .top_n_commands
                 .get(i)
-                .map(|(cmd, count)| Cell::new(format_truncated(cmd, 39, *count)))
+                .map(|(cmd, count)| Cell::new(truncate_count_text_for_table_cell(cmd, 39, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
             let binary_cell = self
                 .top_n_binaries
                 .get(i)
-                .map(|(bin, count)| Cell::new(format_truncated(bin, 39, *count)))
+                .map(|(bin, count)| Cell::new(truncate_count_text_for_table_cell(bin, 39, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
             table.add_row(vec![rank_cell, command_cell, binary_cell]);
