@@ -4,7 +4,7 @@
 //! history entries and generating statistics.
 
 use crate::history::History;
-use crate::utils::{format_rank_icon, truncate_count_text};
+use crate::utils::{format_rank_icon, truncate_count_text, truncate_text_left};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
@@ -178,7 +178,12 @@ impl Display for HistoryAnalysis {
         // Format the title
         let box_title = format!(
             "📊 History Analysis for {}:",
-            style(&self.filename).cyan().bold()
+            style(truncate_text_left(
+                &self.filename,
+                MAX_CELL_TEXT_LENGTH + 20
+            ))
+            .cyan()
+            .bold()
         );
 
         // Format date range with colored dates

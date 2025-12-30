@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
 pub(crate) fn read_history_file<P: AsRef<Path>>(
@@ -48,11 +47,7 @@ pub(crate) fn read_history_file<P: AsRef<Path>>(
 
 /// Helper function to truncate the text used for displaying the command and executables in table cells.
 /// If the text exceeds max_len, it will be truncated and "..." will be appended.
-pub(crate) fn truncate_count_text(
-    text: &str,
-    max_len: usize,
-    count: usize,
-) -> String {
+pub(crate) fn truncate_count_text(text: &str, max_len: usize, count: usize) -> String {
     if text.len() > max_len {
         format!(
             "{}... {}",
@@ -65,6 +60,15 @@ pub(crate) fn truncate_count_text(
             text,
             style(format!("({} times)", count)).dim().italic()
         )
+    }
+}
+
+/// Helper function to truncate text from the left side. If the text exceeds max_len, it will be truncated and "..." will be prepended.
+pub(crate) fn truncate_text_left(text: &str, max_len: usize) -> String {
+    if text.len() > max_len {
+        format!("...{}", &text[text.len() - max_len..])
+    } else {
+        text.to_string()
     }
 }
 
@@ -85,12 +89,19 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_truncate_text_for_table_cell() {
+    fn test_truncate_count_text() {
         let text = "This is a very long command that exceeds the maximum length.";
         let truncated = truncate_count_text(text, 20, 5);
         // Remove ANSI escape codes for testing
         let truncated = strip_ansi_codes(&truncated);
         assert_eq!(truncated, "This is a very long ... (5 times)");
+    }
+
+    #[test]
+    fn test_truncate_text_left() {
+        let text = "This is a very long command that exceeds the maximum length.";
+        let truncated = truncate_text_left(text, 20);
+        assert_eq!(truncated, "... the maximum length.");
     }
 
     #[test]
