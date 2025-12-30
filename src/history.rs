@@ -1,9 +1,10 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
+use crate::util::{format_truncated, read_history_file};
 use chrono::{Duration, Local, NaiveDate};
-use comfy_table::Table;
+use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
-use comfy_table::*;
+use comfy_table::{Attribute, Cell, ContentArrangement, Table};
 use expand_tilde::expand_tilde;
 use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
@@ -11,7 +12,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 /// Suffix to append to the backup files before the local timestamp
@@ -284,6 +285,8 @@ impl Display for TimeAnalysis {
         let mut table = Table::new();
         table
             .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_content_arrangement(ContentArrangement::Dynamic)
             .set_header(vec![
                 Cell::new("Commands").add_attribute(Attribute::Bold),
                 Cell::new("Binaries").add_attribute(Attribute::Bold),
@@ -292,21 +295,17 @@ impl Display for TimeAnalysis {
 
         // The top N commands and binaries may have different lengths
         for i in 0..self.top_n_commands.len().max(self.top_n_binaries.len()) {
-            let command_cell = if let Some(command) = self.top_n_commands.get(i) {
-                let (mut cmd, count) = command.clone();
-                cmd.truncate(40);
-                Cell::new(format!("{} ({} times)", cmd, count))
-            } else {
-                Cell::new("")
-            };
+            let command_cell = self
+                .top_n_commands
+                .get(i)
+                .map(|(cmd, count)| Cell::new(format_truncated(cmd, 40, *count)))
+                .unwrap_or_else(|| Cell::new(""));
 
-            let binary_cell = if let Some(bin) = self.top_n_binaries.get(i) {
-                let (mut bin, count) = bin.clone();
-                bin.truncate(40);
-                Cell::new(format!("{} ({} times)", bin, count))
-            } else {
-                Cell::new("")
-            };
+            let binary_cell = self
+                .top_n_binaries
+                .get(i)
+                .map(|(bin, count)| Cell::new(format_truncated(bin, 40, *count)))
+                .unwrap_or_else(|| Cell::new(""));
 
             table.add_row(vec![command_cell, binary_cell]);
         }
@@ -315,45 +314,6 @@ impl Display for TimeAnalysis {
 
         write!(f, "")
     }
-}
-
-/// Reads a Zsh history file and processes its contents into a vector of complete commands.
-/// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
-fn read_history_file<P: AsRef<Path>>(filepath: &P) -> Result<Vec<String>, errors::HistoryError> {
-    let mut commands = Vec::new();
-    let mut current_command = String::new();
-
-    let name = filepath.as_ref().to_string_lossy().to_string();
-
-    let file = File::open(filepath)
-        .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
-    let reader = BufReader::new(file);
-
-    for (counter, line) in reader.lines().enumerate() {
-        let line = line.map_err(|e| {
-            errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
-        })?;
-        let trimmed = line.trim_end(); // Trim trailing whitespace
-        if trimmed.ends_with('\\') {
-            // Remove the backslash and keep appending
-            current_command.push_str(trimmed);
-        } else {
-            if !current_command.is_empty() {
-                // Still appending a multi-line command
-                current_command.push('\n');
-            }
-            current_command.push_str(trimmed);
-
-            commands.push(current_command.clone());
-            current_command.clear();
-        }
-    }
-
-    if !current_command.is_empty() {
-        commands.push(current_command);
-    }
-
-    Ok(commands)
 }
 
 #[cfg(test)]
