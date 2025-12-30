@@ -1,12 +1,9 @@
-## [unreleased]
+
+## [0.4.1] - 2025-12-30
 
 ### 🐛 Bug Fixes
 
-- Ensure the backup file is created + add missing test
-
-### 📚 Documentation
-
-- *(release)* Update CHANGELOG.md for next release
+- Ensure the backup file is created + add missing test ([#13](https://github.com/haidaraM/zsh-history-cleaner/pull/13))
 
 ### ⚙️ Miscellaneous Tasks
 
