@@ -1,10 +1,11 @@
 use crate::entry::HistoryEntry;
 use crate::errors;
-use crate::util::{format_truncated, read_history_file, TERMINAL_MAX_WIDTH};
+use crate::util::{TERMINAL_MAX_WIDTH, format_rank_icon, format_truncated, read_history_file};
 use chrono::{Duration, Local, NaiveDate};
 use comfy_table::modifiers::UTF8_ROUND_CORNERS;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table};
+use console::style;
 use expand_tilde::expand_tilde;
 use humanize_duration::Truncate;
 use humanize_duration::prelude::DurationExt;
@@ -264,22 +265,60 @@ impl Display for TimeAnalysis {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let duration: Duration = self.date_range.1.signed_duration_since(self.date_range.0);
         let human_duration = duration.human(Truncate::Day);
-        let divider = "━".repeat(TERMINAL_MAX_WIDTH.into());
 
-        writeln!(f, "History Analysis for {}", self.filename)?;
-        writeln!(f, "{divider}")?;
+        // Create a visually appealing stats box
+        let box_width = TERMINAL_MAX_WIDTH as usize;
+        let top_border = format!("╭{}╮", "─".repeat(box_width - 2));
+        let bottom_border = format!("╰{}╯", "─".repeat(box_width - 2));
+
+        // Format the title
+        let title = format!(
+            "📊 History Analysis for {}",
+            style(&self.filename).cyan().bold()
+        );
+
+        // Format date range with colored dates
+        let date_range_text = format!(
+            "🗓️ {} → {} {}",
+            style(&self.date_range.0).green().bold(),
+            style(&self.date_range.1).green().bold(),
+            style(format!("({})", human_duration)).dim()
+        );
+
+        // Format total commands with highlighted number
+        let total_commands = format!("📝 Total Commands: {}", style(&self.size).yellow().bold());
+
+        // Print the stats box
+        writeln!(f, "{}", style(top_border).blue())?;
+        writeln!(f, "{} {} {}", style("│").blue(), title, style("│").blue())?;
         writeln!(
             f,
-            "🗓️ Date Range: From {} to {} ({})",
-            self.date_range.0, self.date_range.1, human_duration
+            "{} {} {}",
+            style("│").blue(),
+            date_range_text,
+            style("│").blue()
         )?;
-
-        writeln!(f, "#  Total Commands: {}\n", self.size)?;
-
         writeln!(
             f,
-            "🔥 Top {}:",
-            self.top_n_commands.len().max(self.top_n_binaries.len())
+            "{} {} {}",
+            style("│").blue(),
+            total_commands,
+            style("│").blue()
+        )?;
+        writeln!(f, "{}", style(bottom_border).blue())?;
+        writeln!(f)?;
+
+        // Section header for top items
+        writeln!(
+            f,
+            "{} {}",
+            style("🔥").bold(),
+            style(format!(
+                "Top {} Most Used:",
+                self.top_n_commands.len().max(self.top_n_binaries.len())
+            ))
+            .magenta()
+            .bold()
         )?;
 
         let mut table = Table::new();
@@ -288,26 +327,31 @@ impl Display for TimeAnalysis {
             .apply_modifier(UTF8_ROUND_CORNERS)
             .set_content_arrangement(ContentArrangement::Dynamic)
             .set_header(vec![
-                Cell::new("Commands").add_attribute(Attribute::Bold),
-                Cell::new("Binaries").add_attribute(Attribute::Bold),
+                Cell::new("").add_attribute(Attribute::Bold),
+                Cell::new(style("Commands").cyan().bold().to_string())
+                    .add_attribute(Attribute::Bold),
+                Cell::new(style("Binaries").cyan().bold().to_string())
+                    .add_attribute(Attribute::Bold),
             ])
             .set_width(TERMINAL_MAX_WIDTH.into());
 
         // The top N commands and binaries may have different lengths
         for i in 0..self.top_n_commands.len().max(self.top_n_binaries.len()) {
+            let rank_cell = Cell::new(format_rank_icon(i + 1));
+
             let command_cell = self
                 .top_n_commands
                 .get(i)
-                .map(|(cmd, count)| Cell::new(format_truncated(cmd, 40, *count)))
+                .map(|(cmd, count)| Cell::new(format_truncated(cmd, 39, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
             let binary_cell = self
                 .top_n_binaries
                 .get(i)
-                .map(|(bin, count)| Cell::new(format_truncated(bin, 40, *count)))
+                .map(|(bin, count)| Cell::new(format_truncated(bin, 39, *count)))
                 .unwrap_or_else(|| Cell::new(""));
 
-            table.add_row(vec![command_cell, binary_cell]);
+            table.add_row(vec![rank_cell, command_cell, binary_cell]);
         }
 
         writeln!(f, "{table}")?;

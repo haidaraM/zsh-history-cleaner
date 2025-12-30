@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 /// Maximum width for terminal when displaying some things.
-pub const TERMINAL_MAX_WIDTH: u8 = 80;
+pub const TERMINAL_MAX_WIDTH: u8 = 90;
 
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
@@ -63,5 +63,15 @@ pub(crate) fn format_truncated(text: &str, max_len: usize, count: usize) -> Stri
             text,
             style(format!("({} times)", count)).dim().italic()
         )
+    }
+}
+
+/// Helper function to format ranking with medal icons for top 3.
+pub(crate) fn format_rank_icon(rank: usize) -> String {
+    match rank {
+        1 => "🥇".to_string(),
+        2 => "🥈".to_string(),
+        3 => "🥉".to_string(),
+        _ => format!("{}", rank),
     }
 }
