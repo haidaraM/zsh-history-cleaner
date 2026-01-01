@@ -4,14 +4,25 @@ A command line tool to clean your .zsh history by:
 
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from specific time ranges.
-- Providing an analysis of your history file.
-- Removing commands matching some patterns (TODO)
+- Providing an analysis of your history file:
+  ![analyze.png](doc/analyze.png)
 
 > [!WARNING]  
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
 > first project in Rust). As such, do not expect the project to be a full-featured solution for cleaning your history
 > file. A backup of your history file is created by default before any modification. Use the
 `--no-backup` flag with caution.
+
+## Roadmap
+
+Contributions are welcome! Some ideas for future improvements:
+
+- Removing commands matching some patterns
+- Detect commands including sensitive information like passwords, secrets, API Keys etc...
+- Auto removing backup files older than a certain date
+- Read the history file from the env var `HISTFILE`
+- Cargo binstall and/or binaries assets in GitHub releases
+- Support non UTF-8 history files/charsets (for emojis etc...)
 
 ## Limitations
 
@@ -29,7 +40,7 @@ zhc --help
 
 - Analyze the history file and print some statistics:
     ```shell
-    $ zhc --analyze
+    $ zhc --analyze # or zhc -a
     ```
 - Remove duplicate commands from the default history file (`~/.zsh_history`):
     ```shell
@@ -70,6 +81,11 @@ Options:
   -a, --analyze
           Analyze the history file and provide statistics about the commands over time. No changes are made to the history file when this flag is used
 
+      --top-n <TOP_N>
+          Number of top commands/executables to display in analysis. Only used with --analyze
+          
+          [default: 10]
+
   -h, --help
           Print help (see a summary with '-h')
 
@@ -85,3 +101,8 @@ cargo build
 cargo test
 ```
 
+## Release
+
+The code is set up to use `cargo-release` and `git-cliff` to automate releases and CHANGELOG generation. The workflow
+automatically pushes to crates.io when a new tag is pushed with the
+**[Trusted Publishing](https://crates.io/docs/trusted-publishing) feature enabled and enforced.** 

@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 use chrono::NaiveDate;
 use clap::{ArgAction, Parser};
+use zsh_history_cleaner::analyze::{HistoryAnalyzer, TERMINAL_MAX_WIDTH};
 use zsh_history_cleaner::history;
 
 /// Clean your commands history by removing duplicate commands, commands between dates, etc...
@@ -35,6 +36,10 @@ struct Cli {
     /// No changes are made to the history file when this flag is used.
     #[arg(short, long)]
     analyze: bool,
+
+    /// Number of top commands/executables to display in analysis. Only used with --analyze.
+    #[arg(long, default_value = "10", value_parser = clap::value_parser!(usize), requires = "analyze" )]
+    top_n: usize,
 }
 
 impl Cli {
@@ -78,13 +83,14 @@ fn run(cli: Cli) -> Result<Option<String>, String> {
     }
 
     if cli.dry_run && !cli.analyze {
-        println!("{}", "━".repeat(65));
+        println!("{}", "━".repeat(TERMINAL_MAX_WIDTH.into()));
         println!("Dry run mode enabled: no changes will be saved to the filesystem.");
-        println!("{}", "━".repeat(65));
+        println!("{}", "━".repeat(TERMINAL_MAX_WIDTH.into()));
     }
 
     if cli.analyze {
-        let time_analysis = history.analyze_by_time();
+        let analyzer = HistoryAnalyzer::new(&history);
+        let time_analysis = analyzer.analyze(cli.top_n);
         println!("{}", time_analysis);
         return Ok(None);
     }

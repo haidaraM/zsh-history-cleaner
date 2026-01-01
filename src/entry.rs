@@ -20,7 +20,7 @@ static HISTORY_LINE_REGEX: Lazy<Regex> = Lazy::new(|| {
 /// - `duration`: The time it took to execute the command.
 #[derive(Debug, Clone)]
 pub struct HistoryEntry {
-    /// The command executed by the user.
+    /// The full command executed by the user.
     command: String,
 
     /// The UNIX timestamp when the command was executed.
@@ -53,6 +53,19 @@ impl HistoryEntry {
 
     pub fn command(&self) -> &str {
         &self.command
+    }
+
+    /// Returns the command if it is 'valid' (not empty, not a comment, not a no-op).
+    /// Note: This implementation is not perfect, but it's enough for basic filtering for now.
+    /// For example, it does not handle multi-line commands that start with a comment.
+    pub fn valid_command(&self) -> Option<&str> {
+        let trimmed_command = self.command.trim();
+        if trimmed_command.is_empty() || trimmed_command.starts_with('#') || trimmed_command == ":"
+        {
+            None
+        } else {
+            Some(trimmed_command)
+        }
     }
 
     pub fn duration(&self) -> &Duration {

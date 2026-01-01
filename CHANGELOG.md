@@ -1,3 +1,8 @@
+## [unreleased]
+
+### 🚀 Features
+
+- Add support for top N binaries
 
 ## [0.4.1] - 2025-12-30
 
@@ -9,7 +14,7 @@
 
 - Add dependabot support ([#11](https://github.com/haidaraM/zsh-history-cleaner/pull/11))
 
-## [0.4.0] - 2025-12-28
+## [0.4.0] - 2025-12-29
 
 ### 🚀 Features
 
