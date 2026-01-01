@@ -1,8 +1,14 @@
-## [unreleased]
+
+## [0.5.0] - 2026-01-01
 
 ### 🚀 Features
 
 - Add support for top N executables + improve displaying the analysis ([#14](https://github.com/haidaraM/zsh-history-cleaner/pull/14))
+
+### 📚 Documentation
+
+- *(release)* Update CHANGELOG.md for next release
+- Resize analyze image in the README
 
 ## [0.4.1] - 2025-12-30
 
