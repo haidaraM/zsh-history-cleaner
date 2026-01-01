@@ -34,6 +34,23 @@ impl<'a> HistoryAnalyzer<'a> {
         Self { history }
     }
 
+    /// Analyze the History and return a HistoryAnalysis struct
+    pub fn analyze(&self, top_n: usize) -> HistoryAnalysis {
+        let date_range = self.date_range().unwrap_or_else(|| {
+            let now = Local::now().date_naive();
+            (now, now)
+        });
+        HistoryAnalysis {
+            filename: self.history.filename().to_string(),
+            size: self.history.size(),
+            date_range,
+            top_n,
+            top_n_commands: self.top_n_commands(top_n),
+            top_n_executables: self.top_n_executables(top_n),
+            duplicate_counts: self.history.duplicate_commands_count(),
+        }
+    }
+
     /// Return the top n most frequent commands.
     /// If n is 0, returns an empty vector.
     pub fn top_n_commands(&self, n: usize) -> Vec<(String, usize)> {
@@ -104,22 +121,6 @@ impl<'a> HistoryAnalyzer<'a> {
                 })
             })
     }
-
-    /// Analyze the History and return a HistoryAnalysis struct
-    pub fn analyze(&self, top_n: usize) -> HistoryAnalysis {
-        let date_range = self.date_range().unwrap_or_else(|| {
-            let now = Local::now().date_naive();
-            (now, now)
-        });
-        HistoryAnalysis {
-            filename: self.history.filename().to_string(),
-            size: self.history.size(),
-            date_range,
-            top_n,
-            top_n_commands: self.top_n_commands(top_n),
-            top_n_executables: self.top_n_executables(top_n),
-        }
-    }
 }
 
 /// Represents the analysis of history commands by time
@@ -135,6 +136,8 @@ pub struct HistoryAnalysis {
     pub size: usize,
     /// The range of dates covered by the commands (min_date, max_date)
     pub date_range: (NaiveDate, NaiveDate),
+    /// Duplicate counts
+    pub duplicate_counts: usize,
     /// Top n
     pub top_n: usize,
     /// The top N most frequent commands
@@ -191,11 +194,25 @@ impl Display for HistoryAnalysis {
             "🗓️ {} → {} {}",
             style(&self.date_range.0).green().bold(),
             style(&self.date_range.1).green().bold(),
-            style(format!("({})", human_duration)).dim()
+            style(format!("({})", human_duration)).dim().italic()
         );
 
         // Format total commands with highlighted number
         let total_commands = format!("📝 Total Commands: {}", style(&self.size).yellow().bold());
+        let duplicate_commands_count = self.duplicate_counts;
+        let duplicate_commands_percentage = if self.size > 0 {
+            format!(
+                "({:.2}%)",
+                self.duplicate_counts as f64 / self.size as f64 * 100.0
+            )
+        } else {
+            "(0.00%)".into()
+        };
+        let duplicate_commands = format!(
+            "♻️ Duplicate Commands: {} {}",
+            style(duplicate_commands_count).bold().yellow(),
+            style(duplicate_commands_percentage).dim().italic()
+        );
 
         // Print the stats box with properly aligned borders
         writeln!(f, "{}", style(top_border).blue())?;
@@ -203,6 +220,7 @@ impl Display for HistoryAnalysis {
         writeln!(f, "{}", make_box_line("".into()))?;
         writeln!(f, "{}", make_box_line(date_range_text))?;
         writeln!(f, "{}", make_box_line(total_commands))?;
+        writeln!(f, "{}", make_box_line(duplicate_commands))?;
         writeln!(f, "{}", style(bottom_border).blue())?;
         writeln!(f)?;
 
@@ -211,7 +229,9 @@ impl Display for HistoryAnalysis {
             f,
             "{} {}",
             style("🔥").bold(),
-            style(format!("Top {} Most Used:", self.top_n)).magenta().bold()
+            style(format!("Top {} Most Used:", self.top_n))
+                .magenta()
+                .bold()
         )?;
 
         let mut table = Table::new();

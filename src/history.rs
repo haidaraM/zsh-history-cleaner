@@ -75,6 +75,17 @@ impl History {
         Ok(backup_path)
     }
 
+    /// Count the number of duplicate commands in the history.
+    pub fn duplicate_commands_count(&self) -> usize {
+        let mut command_counts: HashMap<&str, usize> = HashMap::new();
+
+        for entry in &self.entries {
+            *command_counts.entry(entry.command()).or_insert(0) += 1;
+        }
+
+        command_counts.values().filter(|&count| *count > 1).count()
+    }
+
     /// Remove the duplicate commands from the history.
     /// This function retains the last occurrence of a command when duplicates are found.
     /// Returns the number of removed duplicate commands.
@@ -95,6 +106,7 @@ impl History {
             }
         }
 
+        // Replace the entries with the deduplicated vector
         self.entries = new_entries;
 
         before_count - self.entries.len()
@@ -258,7 +270,8 @@ line'"#
         let mut history = History::from_file(&tmp_hist_file).unwrap();
 
         assert_eq!(history.entries.len(), 4);
-        history.remove_duplicates();
+        let count = history.remove_duplicates();
+        assert_eq!(count, 1, "One duplicate command should have been removed");
         assert_eq!(history.entries.len(), 3, "Wrong number of history entries!");
         assert_eq!(history.entries[0].command(), "tf fmt -recursive");
 
@@ -266,6 +279,21 @@ line'"#
         assert_eq!(*history.entries[1].timestamp(), 1732577157);
 
         assert_eq!(history.entries[2].command(), "echo 'hello world'");
+    }
+
+    #[test]
+    fn test_duplicate_commands_count() {
+        let cmds = [
+            ": 1732577005:0;tf fmt -recursive",
+            ": 1732577037:0;tf apply",
+            ": 1732577157:0;tf apply",
+            ": 1732577197:0;echo 'hello world'",
+            ": 1732577200:0;echo 'hello world'",
+        ];
+        let tmp_hist_file = get_tmp_file(cmds.join("\n").as_str());
+        let history = History::from_file(&tmp_hist_file).unwrap();
+        let duplicate_count = history.duplicate_commands_count();
+        assert_eq!(duplicate_count, 2, "There should be 2 duplicate commands");
     }
 
     // Write the history to a file with a backup

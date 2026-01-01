@@ -5,13 +5,19 @@ A command line tool to clean your .zsh history by:
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from specific time ranges.
 - Providing an analysis of your history file.
-- Removing commands matching some patterns (TODO)
 
 > [!WARNING]  
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
 > first project in Rust). As such, do not expect the project to be a full-featured solution for cleaning your history
 > file. A backup of your history file is created by default before any modification. Use the
 `--no-backup` flag with caution.
+
+## Roadmap
+
+- Removing commands matching some patterns
+- Detect commands including sensitive information like passwords, secrets, API Keys etc...
+- Auto removing backup files older than a certain date
+- Read the history file from the env var `HISTFILE`
 
 ## Limitations
 
@@ -90,3 +96,8 @@ cargo build
 cargo test
 ```
 
+## Release
+
+The code is set up to use `cargo-release` and `git-cliff` to automate releases and CHANGELOG generation. The workflow
+automatically pushes to crates.io when a new tag is pushed with the
+**[Trusted Publishing](https://crates.io/docs/trusted-publishing) feature enabled and enforced.** 
