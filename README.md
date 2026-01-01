@@ -4,7 +4,8 @@ A command line tool to clean your .zsh history by:
 
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from specific time ranges.
-- Providing an analysis of your history file.
+- Providing an analysis of your history file:
+  ![analyze.png](doc/analyze.png)
 
 > [!WARNING]  
 > **Disclaimer:** I'm primarily using this project as an opportunity to learn the Rust programming language (it's my
@@ -14,10 +15,14 @@ A command line tool to clean your .zsh history by:
 
 ## Roadmap
 
+Contributions are welcome! Some ideas for future improvements:
+
 - Removing commands matching some patterns
 - Detect commands including sensitive information like passwords, secrets, API Keys etc...
 - Auto removing backup files older than a certain date
 - Read the history file from the env var `HISTFILE`
+- Cargo binstall and/or binaries assets in GitHub releases
+- Support non UTF-8 history files/charsets (for emojis etc...)
 
 ## Limitations
 
