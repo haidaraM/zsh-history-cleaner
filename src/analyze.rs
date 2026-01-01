@@ -106,7 +106,7 @@ impl<'a> HistoryAnalyzer<'a> {
     }
 
     /// Analyze the History and return a HistoryAnalysis struct
-    pub fn analyze(&self, n: usize) -> HistoryAnalysis {
+    pub fn analyze(&self, top_n: usize) -> HistoryAnalysis {
         let date_range = self.date_range().unwrap_or_else(|| {
             let now = Local::now().date_naive();
             (now, now)
@@ -115,9 +115,9 @@ impl<'a> HistoryAnalyzer<'a> {
             filename: self.history.filename().to_string(),
             size: self.history.size(),
             date_range,
-            n,
-            top_n_commands: self.top_n_commands(n),
-            top_n_executables: self.top_n_executables(n),
+            top_n,
+            top_n_commands: self.top_n_commands(top_n),
+            top_n_executables: self.top_n_executables(top_n),
         }
     }
 }
@@ -136,7 +136,7 @@ pub struct HistoryAnalysis {
     /// The range of dates covered by the commands (min_date, max_date)
     pub date_range: (NaiveDate, NaiveDate),
     /// Top n
-    pub n: usize,
+    pub top_n: usize,
     /// The top N most frequent commands
     pub top_n_commands: Vec<(String, usize)>,
     /// The top N most frequent executables
@@ -211,7 +211,7 @@ impl Display for HistoryAnalysis {
             f,
             "{} {}",
             style("🔥").bold(),
-            style(format!("Top {} Most Used:", self.n)).magenta().bold()
+            style(format!("Top {} Most Used:", self.top_n)).magenta().bold()
         )?;
 
         let mut table = Table::new();
