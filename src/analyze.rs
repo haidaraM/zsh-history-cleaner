@@ -197,8 +197,12 @@ impl Display for HistoryAnalysis {
             style(format!("({})", human_duration)).dim().italic()
         );
 
-        // Format total commands with highlighted number
-        let total_commands = format!("📝 Total Commands: {}", style(&self.size).yellow().bold());
+        // Format total commands with highlighted number and alignment
+        let total_commands = format!(
+            "📝 {:<20} {}",
+            "Total Commands:",
+            style(&self.size).yellow().bold()
+        );
         let duplicate_commands_count = self.duplicate_counts;
         let duplicate_commands_percentage = if self.size > 0 {
             format!(
@@ -209,7 +213,8 @@ impl Display for HistoryAnalysis {
             "(0.00%)".into()
         };
         let duplicate_commands = format!(
-            "♻️ Duplicate Commands: {} {}",
+            "♻️ {:<20} {} {}",
+            "Duplicate Commands:",
             style(duplicate_commands_count).bold().yellow(),
             style(duplicate_commands_percentage).dim().italic()
         );
