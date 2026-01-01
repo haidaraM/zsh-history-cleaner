@@ -5,6 +5,7 @@ A command line tool to clean your .zsh history by:
 - Removing duplicate commands: the first command is kept among the duplicates.
 - Removing commands from specific time ranges.
 - Providing an analysis of your history file:
+
   ![analyze.png](doc/analyze.png)
 
 > [!WARNING]  
