@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- Add support for top N binaries
+- Add support for top N executables + improve displaying the analysis ([#14](https://github.com/haidaraM/zsh-history-cleaner/pull/14))
 
 ## [0.4.1] - 2025-12-30
 
