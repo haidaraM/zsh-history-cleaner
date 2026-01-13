@@ -1,8 +1,11 @@
+mod zsh_line;
+
 use crate::errors;
 use console::style;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::BufReader;
 use std::path::Path;
+use zsh_line::ZshLineRead;
 
 /// Reads a Zsh history file and processes its contents into a vector of complete commands.
 /// This function handles multiline commands (indicated by a trailing backslash `\`) by combining them into a single logical command.
@@ -18,7 +21,7 @@ pub(crate) fn read_history_file<P: AsRef<Path>>(
         .map_err(|e| errors::HistoryError::IoError(name.clone(), e.to_string()))?;
     let reader = BufReader::new(file);
 
-    for (counter, line) in reader.lines().enumerate() {
+    for (counter, line) in reader.zsh_lines().enumerate() {
         let line = line.map_err(|e| {
             errors::HistoryError::LineEncodingError((counter + 1).to_string(), e.to_string())
         })?;
@@ -110,5 +113,14 @@ mod tests {
         assert_eq!(format_rank_icon(2), "🥈");
         assert_eq!(format_rank_icon(3), "🥉");
         assert_eq!(format_rank_icon(4), "4");
+    }
+
+    #[test]
+    fn test_metafied_text() {
+        let metafied = b"\xE6\x83\xB6\x83\xA7\xE5\xAD\x83\xB7";
+        let mut reader = BufReader::new(metafied.as_slice());
+        let mut buf = "ls ".to_owned();
+        assert_eq!(reader.read_zsh_line(&mut buf).unwrap(), 9);
+        assert_eq!(buf, "ls 文字");
     }
 }
