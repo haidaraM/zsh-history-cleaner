@@ -23,12 +23,10 @@ Contributions are welcome! Some ideas for future improvements:
 - Auto removing backup files older than a certain date
 - Read the history file from the env var `HISTFILE`
 - Cargo binstall and/or binaries assets in GitHub releases
-- Support non UTF-8 history files/charsets (for emojis etc...)
 
 ## Limitations
 
 - Only the `.zsh_history` file format is supported.
-- The history file is expected to be in UTF-8 encoding and should not contain non UTF-8 characters.
 
 ## Installation
 
@@ -77,7 +75,7 @@ Options:
           Should we keep duplicate commands in the history file?
 
   -r, --remove-between <START_DATE> <END_DATE>
-          Remove commands between the provided two dates (included): YYYY-MM-DD YYYY-MM-DD. The first date must be before or equal to the second date. Example: --remove-between 2023-01-01 2023-06-30
+          Remove commands between the provided two dates (inclusive): YYYY-MM-DD YYYY-MM-DD. The first date must be before or equal to the second date. Example: --remove-between 2023-01-01 2023-06-30
 
   -a, --analyze
           Analyze the history file and provide statistics about the commands over time. No changes are made to the history file when this flag is used

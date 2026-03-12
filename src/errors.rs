@@ -10,8 +10,11 @@ pub enum HistoryError {
     #[error("Failed to parse integer: {0}.")]
     ParseIntError(#[from] std::num::ParseIntError),
 
+    #[error("IO error when reading the file: {0}.")]
+    IOError(#[from] std::io::Error),
+
     #[error("Error when handling the file '{0}': {1}.")]
-    IoError(String, String),
+    FileIoError(String, String),
 
     #[error("Error when reading line {0}: {1}.")]
     LineEncodingError(String, String),
