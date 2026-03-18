@@ -1,3 +1,12 @@
+## [unreleased]
+
+### 🚀 Features
+
+- Add support for special characters in history file
+
+### 📚 Documentation
+
+- Fix analyze image position
 
 ## [0.5.0] - 2026-01-01
 

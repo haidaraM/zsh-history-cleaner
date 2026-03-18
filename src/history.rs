@@ -62,7 +62,7 @@ impl History {
         };
 
         let output_file = File::create(&self.filename)
-            .map_err(|e| errors::HistoryError::IoError(self.filename.clone(), e.to_string()))?;
+            .map_err(|e| errors::HistoryError::FileIoError(self.filename.clone(), e.to_string()))?;
 
         let mut writer = BufWriter::new(output_file);
 
@@ -234,25 +234,17 @@ line'"#
         // Try to read the history file - this should fail with LineEncodingError
         let result = History::from_file(&tmpfile);
 
-        assert!(
-            result.is_err(),
-            "Expected an error when reading non-UTF-8 content"
-        );
-
-        if let Err(error) = result {
-            match error {
-                errors::HistoryError::LineEncodingError(line_number, error_msg) => {
-                    assert_eq!(line_number, "2", "Error should occur on line 2");
-                    assert!(
-                        error_msg.contains("stream did not contain valid UTF-8"),
-                        "Error message should mention UTF-8: {}",
-                        error_msg
-                    );
-                }
-                _other_error => {
-                    panic!("Expected LineEncodingError, but got a different error type")
-                }
+        let error = result.err().expect("Expected an error when reading non-UTF-8 content");
+        match error {
+            errors::HistoryError::LineEncodingError(line_number, error_msg) => {
+                assert_eq!(line_number, "2", "Error should occur on line 2");
+                assert!(
+                    error_msg.contains("invalid utf-8"),
+                    "Error message should mention UTF-8: {}",
+                    error_msg
+                );
             }
+            other => panic!("Expected LineEncodingError but got: {:?}", other),
         }
     }
 

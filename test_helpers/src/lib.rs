@@ -27,7 +27,7 @@ pub fn get_tmp_file_with_invalid_utf8() -> NamedTempFile {
         .write_all(valid_line.as_bytes())
         .expect("Failed to write valid line");
 
-    // Write a line with invalid UTF-8 bytes (control characters)
+    // Write a line with bytes that are invalid in UTF-8 (\xFF and \xFE can never appear in valid UTF-8)
     let invalid_line = b": 1732577010:0;echo 'invalid \xFF\xFE command'\n";
     tmpfile
         .write_all(invalid_line)
