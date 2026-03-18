@@ -1,12 +1,23 @@
-## [unreleased]
+
+## [0.6.0] - 2026-03-19
 
 ### 🚀 Features
 
-- Add support for special characters in history file
+- Add support for special characters in the history file ([#17](https://github.com/haidaraM/zsh-history-cleaner/pull/17))
+
+### 🐛 Bug Fixes
+
+- *(dependabot)* Add the missing rust-toolchain.toml file
+- *(dependabot)* Replace rust-toolchain with cargo
 
 ### 📚 Documentation
 
 - Fix analyze image position
+
+### Chore
+
+- *(deps)* Bump time from 0.3.44 to 0.3.47 ([#16](https://github.com/haidaraM/zsh-history-cleaner/pull/16))
+- *(deps)* Bump the rust group with 7 updates ([#18](https://github.com/haidaraM/zsh-history-cleaner/pull/18))
 
 ## [0.5.0] - 2026-01-01
 
@@ -28,6 +39,10 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Add dependabot support ([#11](https://github.com/haidaraM/zsh-history-cleaner/pull/11))
+
+### Chore
+
+- *(deps)* Bump actions/checkout from 5 to 6 in the github-actions group ([#12](https://github.com/haidaraM/zsh-history-cleaner/pull/12))
 
 ## [0.4.0] - 2025-12-29
 
