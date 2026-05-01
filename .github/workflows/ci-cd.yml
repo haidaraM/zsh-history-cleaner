@@ -68,7 +68,7 @@ jobs:
         run: cargo release publish --execute --no-confirm
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           make_latest: true
           body: ${{ steps.git-cliff.outputs.content }}
